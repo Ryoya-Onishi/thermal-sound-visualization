@@ -75,7 +75,6 @@ namespace ThermalProfiler
 
             IsConnected = new ReactiveProperty<bool>(false);
 
-            _grabImage = true;
             ButtonPower = new AsyncReactiveCommand();
             ButtonPower.Subscribe(async _ =>
             {
@@ -88,7 +87,7 @@ namespace ThermalProfiler
                 if (res is bool quit && quit)
                 {
                     _grabImage = false;
-                    await _thermoHandler;
+                    if (_thermoHandler != null) await _thermoHandler;
                     Application.Current.Shutdown();
                 }
             });
@@ -112,6 +111,7 @@ namespace ThermalProfiler
                     return;
                 }
 
+                _grabImage = true;
                 _thermoHandler = Task.Run(ImageGrabberMethod);
                 IsConnected.Value = true;
             });

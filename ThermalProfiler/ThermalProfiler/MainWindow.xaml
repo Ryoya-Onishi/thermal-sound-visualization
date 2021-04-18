@@ -52,14 +52,27 @@ Copyright (c) 2021 Hapis Lab. All rights reserved.
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0" VerticalAlignment="Top">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right">
-                    <Button Style="{StaticResource MaterialDesignFloatingActionDarkButton}" 
-                            Height="40" Width="40" Padding="0" BorderBrush="{x:Null}" Background="{x:Null}" Command="{Binding ButtonPower}">
-                        <materialDesign:PackIcon Kind="Power" Width="32" Height="32" />
-                    </Button>
-                </StackPanel>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Menu IsMainMenu="True">
+                        <ComboBox>
+                            <ComboBoxItem Content="10"/>
+                            <ComboBoxItem IsSelected="True" Content="12"/>
+                            <ComboBoxItem Content="14"/>
+                            <ComboBoxItem Content="16"/>
+                        </ComboBox>
+                </Menu>
+
+                <Button Grid.Column="1" Style="{StaticResource MaterialDesignFloatingActionDarkButton}" 
+                    Height="40" Width="40" Padding="0" BorderBrush="{x:Null}" Background="{x:Null}" Command="{Binding ButtonPower}">
+                    <materialDesign:PackIcon Kind="Power" Width="32" Height="32" />
+                </Button>
             </Grid>
+
             <Image Grid.Row="1" 
                    Source="{Binding PaletteImage.Value, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BitmapConverter}}" 
                    Width="382" Height="288"/>
