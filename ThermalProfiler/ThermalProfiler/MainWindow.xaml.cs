@@ -58,10 +58,13 @@ namespace ThermalProfiler
         public event PropertyChangedEventHandler PropertyChanged = null!;
 #pragma warning restore 414
 
-        private IrDirectInterface _irDirectInterface;
         private bool _grabImage;
 
         private Task _thermoHandler;
+        public OptrisColoringPalette[] Palettes { get; } = (OptrisColoringPalette[])Enum.GetValues(typeof(OptrisColoringPalette));
+        public ReactiveProperty<OptrisColoringPalette> Palette { get; set; }
+        public OptrisPaletteScalingMethod[] Scalings { get; } = (OptrisPaletteScalingMethod[])Enum.GetValues(typeof(OptrisPaletteScalingMethod));
+        public ReactiveProperty<OptrisPaletteScalingMethod> Scaling { get; set; }
 
         public AsyncReactiveCommand ButtonPower { get; }
         public AsyncReactiveCommand ButtonConnect { get; }
@@ -72,8 +75,21 @@ namespace ThermalProfiler
         public MainWindowViewModel()
         {
             PaletteImage = MainWindowModel.Instance.ToReactivePropertyAsSynchronized(m => m.PaletteImage);
-
             IsConnected = new ReactiveProperty<bool>(false);
+
+            Palette = new ReactiveProperty<OptrisColoringPalette>(OptrisColoringPalette.Iron);
+            Scaling = new ReactiveProperty<OptrisPaletteScalingMethod>(OptrisPaletteScalingMethod.MinMax);
+
+            Palette.Subscribe(p =>
+            {
+                if (!IsConnected.Value) return;
+                IrDirectInterface.Instance.SetPaletteFormat(p, Scaling.Value);
+            });
+            Scaling.Subscribe(s =>
+            {
+                if (!IsConnected.Value) return;
+                IrDirectInterface.Instance.SetPaletteFormat(Palette.Value, s);
+            });
 
             ButtonPower = new AsyncReactiveCommand();
             ButtonPower.Subscribe(async _ =>
@@ -88,6 +104,7 @@ namespace ThermalProfiler
                 {
                     _grabImage = false;
                     if (_thermoHandler != null) await _thermoHandler;
+                    IrDirectInterface.Instance.Disconnect();
                     Application.Current.Shutdown();
                 }
             });
@@ -97,8 +114,7 @@ namespace ThermalProfiler
             {
                 try
                 {
-                    _irDirectInterface = IrDirectInterface.Instance;
-                    _irDirectInterface.Connect("generic.xml");
+                    IrDirectInterface.Instance.Connect("generic.xml");
                 }
                 catch (IOException ex)
                 {
@@ -123,7 +139,7 @@ namespace ThermalProfiler
             {
                 try
                 {
-                    var images = _irDirectInterface.ThermalPaletteImage;
+                    var images = IrDirectInterface.Instance.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
                 }
                 catch (IOException ex)

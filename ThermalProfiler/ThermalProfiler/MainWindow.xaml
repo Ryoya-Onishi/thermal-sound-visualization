@@ -58,17 +58,35 @@ Copyright (c) 2021 Hapis Lab. All rights reserved.
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Menu IsMainMenu="True">
-                        <ComboBox>
-                            <ComboBoxItem Content="10"/>
-                            <ComboBoxItem IsSelected="True" Content="12"/>
-                            <ComboBoxItem Content="14"/>
-                            <ComboBoxItem Content="16"/>
-                        </ComboBox>
-                </Menu>
+                <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Palette " VerticalAlignment="Center" FontSize="16"/>
+                    <Separator />
+                    <ComboBox FontSize="16" Width="120"
+                                  HorizontalContentAlignment="Right"
+                                  Style="{StaticResource MaterialDesignComboBox}"
+                                  Foreground="{DynamicResource MaterialDesignDarkForeground}"
+                                  ItemsSource="{Binding Palettes}"
+                                  IsEnabled="{Binding IsConnected.Value, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValue="{Binding Palette.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="12 0 0 0">
+                    <TextBlock Text="Scaling " VerticalAlignment="Center" FontSize="16"/>
+                    <Separator />
+                    <ComboBox FontSize="16" Width="80"
+                                  HorizontalContentAlignment="Right"
+                                  Style="{StaticResource MaterialDesignComboBox}"
+                                  Foreground="{DynamicResource MaterialDesignDarkForeground}"
+                                  ItemsSource="{Binding Scalings}"
+                                  IsEnabled="{Binding IsConnected.Value, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValue="{Binding Scaling.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        />
+                </StackPanel>
+                </StackPanel>
 
                 <Button Grid.Column="1" Style="{StaticResource MaterialDesignFloatingActionDarkButton}" 
-                    Height="40" Width="40" Padding="0" BorderBrush="{x:Null}" Background="{x:Null}" Command="{Binding ButtonPower}">
+                        Height="40" Width="40" Padding="0" BorderBrush="{x:Null}" Background="{x:Null}" Command="{Binding ButtonPower}">
                     <materialDesign:PackIcon Kind="Power" Width="32" Height="32" />
                 </Button>
             </Grid>

@@ -1,4 +1,17 @@
-﻿using System;
+﻿/*
+ * File: IrDirectInterface.cs
+ * Project: libirimagerNet
+ * Created Date: 18/04/2021
+ * Author: Shun Suzuki
+ * -----
+ * Last Modified: 18/04/2021
+ * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
+ * -----
+ * Copyright (c) 2021 Hapis Lab. All rights reserved.
+ * 
+ */
+
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -32,14 +45,7 @@ namespace libirimagerNet
 
     public class IrDirectInterface
     {
-        #region fields
-
-        private static IrDirectInterface _instance;
         private bool _isAutomaticShutterActive;
-
-        #endregion
-
-        #region ctor
 
         private IrDirectInterface() { }
 
@@ -48,11 +54,8 @@ namespace libirimagerNet
             Disconnect();
         }
 
-        #endregion
-
-        #region properties
-
-        public static IrDirectInterface Instance => _instance ??= new IrDirectInterface();
+        private static readonly Lazy<IrDirectInterface> Lazy = new Lazy<IrDirectInterface>(() => new IrDirectInterface());
+        public static IrDirectInterface Instance => Lazy.Value;
 
         public bool IsAutomaticShutterActive
         {
@@ -104,7 +107,6 @@ namespace libirimagerNet
                 return image;
             }
         }
-        #endregion
 
         public void Connect(string xmlConfigPath)
         {
