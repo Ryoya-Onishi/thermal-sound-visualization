@@ -95,6 +95,17 @@ Copyright (c) 2021 Hapis Lab. All rights reserved.
                                   SelectedValue="{Binding Port.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         />
                     </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="12 0 0 0">
+                        <TextBlock Text="Interface " VerticalAlignment="Center" FontSize="16"/>
+                        <Separator />
+                        <ComboBox FontSize="16" Width="200"
+                                  HorizontalContentAlignment="Right"
+                                  Style="{StaticResource MaterialDesignComboBox}"
+                                  Foreground="{DynamicResource MaterialDesignDarkForeground}"
+                                  ItemsSource="{Binding Interfaces}"
+                                  SelectedValue="{Binding Interface.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        />
+                    </StackPanel>
                 </StackPanel>
 
                 <Button Grid.Column="1" Style="{StaticResource MaterialDesignFloatingActionDarkButton}" 

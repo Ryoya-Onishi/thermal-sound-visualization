@@ -18,10 +18,12 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using AUTD3Sharp;
 using libirimagerNet;
 using MaterialDesignExtensions.Controls;
 using MaterialDesignThemes.Wpf;
@@ -50,11 +52,16 @@ namespace ThermalProfiler
         public ReactiveProperty<string> Port { get; set; }
         private SerialPort _sp;
 
+        public string[] Interfaces => AUTD.EnumerateAdapters().Select(adapter => adapter.ToString()).ToArray();
+        public ReactiveProperty<string> Interface { get; set; }
+
         private PS4000 _pico;
         private bool _measure;
         private List<Task> _tasks;
 
         private string _tmpPath = "";
+
+        private readonly AUTD _autd;
 
         public ReactiveProperty<string> CurrentMicrophoneTemp { get; set; }
         public ReactiveProperty<string> DataFolder { get; set; }
@@ -81,10 +88,15 @@ namespace ThermalProfiler
             _pico = new PS4000();
             _tasks = new List<Task>();
 
+            _autd = new AUTD();
+            _autd.AddDevice(Vector3f.Zero, Vector3f.Zero);
+
             PaletteImage = new ReactiveProperty<Bitmap>();
             IsConnected = new ReactiveProperty<bool>(false);
             IsStarted = new ReactiveProperty<bool>(false);
             DataFolder = new ReactiveProperty<string>();
+
+            Interface = new ReactiveProperty<string>();
 
             FocusX = new ReactiveProperty<float>(90);
             FocusY = new ReactiveProperty<float>(70);
@@ -136,7 +148,12 @@ namespace ThermalProfiler
                     IrDirectInterface.Instance.Disconnect();
 
                     _sp.Close();
+
                     _pico.Dispose();
+
+                    _autd.Stop();
+                    _autd.Close();
+                    _autd.Dispose();
 
                     Application.Current.Shutdown();
                 }
@@ -147,6 +164,20 @@ namespace ThermalProfiler
         {
             try
             {
+                var link = AUTD.SOEMLink(Interface.Value.Split(',').LastOrDefault()?.Trim() ?? string.Empty, _autd.NumDevices);
+                if (!_autd.OpenWith(link))
+                {
+                    var vm = new ErrorDialogViewModel { Message = { Value = _autd.LastError } };
+                    var dialog = new ErrorDialog
+                    {
+                        DataContext = vm
+                    };
+                    await DialogHost.Show(dialog, "MessageDialogHost");
+                    return;
+                }
+                _autd.Clear();
+                _autd.Synchronize();
+
                 IrDirectInterface.Instance.Connect("generic.xml");
 
                 _sp = new SerialPort { PortName = Port.Value, BaudRate = 115200 };
@@ -157,7 +188,7 @@ namespace ThermalProfiler
                 _pico.Open();
                 _pico.ChannelA.Enabled = true;
                 _pico.ChannelB.Enabled = true;
-                _pico.SamplingRateHz = 10_000_000;
+                _pico.SamplingRateHz = 10000000;
                 _pico.BufferSize = 20000;
                 _pico.ChannelA.Range = Range.Range500MV;
                 _pico.ChannelB.Range = Range.Range50V;
@@ -182,7 +213,6 @@ namespace ThermalProfiler
             _thermoHandler = Task.Run(ImageGrabberMethod);
             IsConnected.Value = true;
         }
-
 
         private async Task SelectFolder()
         {
@@ -228,12 +258,16 @@ namespace ThermalProfiler
             var now = DateTime.Now;
             _tmpPath = Path.Join(DataFolder.Value, now.ToString("yyyy-MM-dd_HH-mm-ss"));
             if (!Directory.Exists(_tmpPath)) Directory.CreateDirectory(_tmpPath);
+
+            _autd.AppendModulationSync(AUTD.Modulation(Duty.Value));
+            _autd.AppendGainSync(AUTD.FocalPointGain(new Vector3f(FocusX.Value, FocusY.Value, FocusZ.Value)));
         }
 
         private async Task Finish()
         {
             IsStarted.Value = false;
             _measure = false;
+            _autd.Stop();
             await Task.WhenAll(_tasks);
             _tasks.Clear();
         }
