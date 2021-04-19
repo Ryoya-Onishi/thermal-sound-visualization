@@ -4,30 +4,18 @@
  * Created Date: 18/04/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/04/2021
+ * Last Modified: 19/04/2021
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Hapis Lab. All rights reserved.
  * 
  */
 
-using System;
-using System.ComponentModel;
-using System.Drawing;
-using System.IO;
-using System.Reactive.Linq;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
-using libirimagerNet;
-using MaterialDesignThemes.Wpf;
-using Reactive.Bindings;
-using ThermalProfiler.Domain;
-using Reactive.Bindings.Extensions;
 
 namespace ThermalProfiler
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
         public MainWindow()
         {
@@ -37,122 +25,6 @@ namespace ThermalProfiler
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             DragMove();
-        }
-    }
-
-    internal class MainWindowModel : INotifyPropertyChanged
-    {
-#pragma warning disable 414
-        public event PropertyChangedEventHandler PropertyChanged = null!;
-#pragma warning restore 414
-
-        private static readonly Lazy<MainWindowModel> Lazy = new Lazy<MainWindowModel>(() => new MainWindowModel());
-        public static MainWindowModel Instance => Lazy.Value;
-
-        public Bitmap PaletteImage { get; set; }
-    }
-
-    internal class MainWindowViewModel : INotifyPropertyChanged
-    {
-#pragma warning disable 414
-        public event PropertyChangedEventHandler PropertyChanged = null!;
-#pragma warning restore 414
-
-        private bool _grabImage;
-
-        private Task _thermoHandler;
-        public OptrisColoringPalette[] Palettes { get; } = (OptrisColoringPalette[])Enum.GetValues(typeof(OptrisColoringPalette));
-        public ReactiveProperty<OptrisColoringPalette> Palette { get; set; }
-        public OptrisPaletteScalingMethod[] Scalings { get; } = (OptrisPaletteScalingMethod[])Enum.GetValues(typeof(OptrisPaletteScalingMethod));
-        public ReactiveProperty<OptrisPaletteScalingMethod> Scaling { get; set; }
-
-        public AsyncReactiveCommand ButtonPower { get; }
-        public AsyncReactiveCommand ButtonConnect { get; }
-
-        public ReactiveProperty<bool> IsConnected { get; set; }
-        public ReactiveProperty<Bitmap> PaletteImage { get; set; }
-
-        public MainWindowViewModel()
-        {
-            PaletteImage = MainWindowModel.Instance.ToReactivePropertyAsSynchronized(m => m.PaletteImage);
-            IsConnected = new ReactiveProperty<bool>(false);
-
-            Palette = new ReactiveProperty<OptrisColoringPalette>(OptrisColoringPalette.Iron);
-            Scaling = new ReactiveProperty<OptrisPaletteScalingMethod>(OptrisPaletteScalingMethod.MinMax);
-
-            Palette.Subscribe(p =>
-            {
-                if (!IsConnected.Value) return;
-                IrDirectInterface.Instance.SetPaletteFormat(p, Scaling.Value);
-            });
-            Scaling.Subscribe(s =>
-            {
-                if (!IsConnected.Value) return;
-                IrDirectInterface.Instance.SetPaletteFormat(Palette.Value, s);
-            });
-
-            ButtonPower = new AsyncReactiveCommand();
-            ButtonPower.Subscribe(async _ =>
-            {
-                var vm = new ConfirmDialogViewModel() { Message = { Value = "Are you sure to quit the application?" } };
-                var dialog = new ConfirmDialog()
-                {
-                    DataContext = vm
-                };
-                var res = await DialogHost.Show(dialog, "MessageDialogHost");
-                if (res is bool quit && quit)
-                {
-                    _grabImage = false;
-                    if (_thermoHandler != null) await _thermoHandler;
-                    IrDirectInterface.Instance.Disconnect();
-                    Application.Current.Shutdown();
-                }
-            });
-
-            ButtonConnect = IsConnected.Select(b => !b).ToAsyncReactiveCommand();
-            ButtonConnect.Subscribe(async _ =>
-            {
-                try
-                {
-                    IrDirectInterface.Instance.Connect("generic.xml");
-                }
-                catch (IOException ex)
-                {
-                    var vm = new ErrorDialogViewModel() { Message = { Value = ex.Message } };
-                    var dialog = new ErrorDialog()
-                    {
-                        DataContext = vm
-                    };
-                    await DialogHost.Show(dialog, "MessageDialogHost");
-                    return;
-                }
-
-                _grabImage = true;
-                _thermoHandler = Task.Run(ImageGrabberMethod);
-                IsConnected.Value = true;
-            });
-        }
-
-        private async Task ImageGrabberMethod()
-        {
-            while (_grabImage)
-            {
-                try
-                {
-                    var images = IrDirectInterface.Instance.ThermalPaletteImage;
-                    PaletteImage.Value = images.PaletteImage;
-                }
-                catch (IOException ex)
-                {
-                    var vm = new ErrorDialogViewModel() { Message = { Value = ex.Message } };
-                    var dialog = new ErrorDialog()
-                    {
-                        DataContext = vm
-                    };
-                    await DialogHost.Show(dialog, "MessageDialogHost");
-                    _grabImage = false;
-                }
-            }
         }
     }
 }

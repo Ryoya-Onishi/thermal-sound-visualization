@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
     <Platforms>AnyCPU;x64</Platforms>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,12 +23,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MaterialDesignExtensions" Version="3.3.0" />
     <PackageReference Include="MaterialDesignThemes" Version="4.0.0" />
     <PackageReference Include="ReactiveProperty" Version="7.8.3" />
+    <PackageReference Include="System.IO.Ports" Version="5.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\libirimagerNet\libirimagerNet.csproj" />
+    <ProjectReference Include="..\ps4000lib\ps4000lib\ps4000lib.csproj" />
   </ItemGroup>
 
 </Project>

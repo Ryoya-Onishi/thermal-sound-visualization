@@ -1,9 +1,22 @@
-﻿<Application x:Class="ThermalProfiler.App"
+﻿<!--
+File: App.xaml
+Project: ThermalProfiler
+Created Date: 18/04/2021
+Author: Shun Suzuki
+=====
+Last Modified: 19/04/2021
+Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
+=====
+Copyright (c) 2021 Hapis Lab. All rights reserved.
+
+-->
+
+<Application x:Class="ThermalProfiler.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ThermalProfiler"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             StartupUri="MainWindow.xaml">
+             StartupUri="MainWindow.xaml"
+             xmlns:mde="https://spiegelp.github.io/MaterialDesignExtensions/winfx/xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -14,7 +27,14 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Accent/materialdesigncolor.lime.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.DialogHost.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.ProgressBar.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignExtensions;component/Themes/Generic.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignExtensions;component/Themes/MaterialDesignDarkTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="mde:OpenDirectoryDialog" BasedOn="{StaticResource {x:Type mde:OpenDirectoryDialog}}">
+                <Style.Resources>
+                    <SolidColorBrush x:Key="PrimaryHueMidBrush" Color="{DynamicResource Primary300}" />
+                </Style.Resources>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

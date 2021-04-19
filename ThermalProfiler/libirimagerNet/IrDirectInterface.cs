@@ -4,7 +4,7 @@
  * Created Date: 18/04/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/04/2021
+ * Last Modified: 19/04/2021
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Hapis Lab. All rights reserved.
@@ -92,22 +92,6 @@ namespace libirimagerNet
             }
         }
 
-        public Bitmap PaletteImage
-        {
-            get
-            {
-                const PixelFormat pixelFormat = PixelFormat.Format24bppRgb;
-                CheckConnectionState();
-                CheckResult(NativeMethods.evo_irimager_get_palette_image_size(out var width, out var height));
-                var image = new Bitmap(width, height, pixelFormat);
-                var rect = new Rectangle(0, 0, image.Width, image.Height);
-                var data = image.LockBits(rect, ImageLockMode.ReadWrite, image.PixelFormat);
-                CheckResult(NativeMethods.evo_irimager_get_palette_image(out width, out height, data.Scan0));
-                image.UnlockBits(data);
-                return image;
-            }
-        }
-
         public void Connect(string xmlConfigPath)
         {
             if (!File.Exists(xmlConfigPath)) throw new ArgumentException("XML Config file doesn't exist: " + xmlConfigPath, nameof(xmlConfigPath));
@@ -126,46 +110,12 @@ namespace libirimagerNet
             IsConnected = false;
         }
 
-        public ushort[,] GetThermalImage()
-        {
-            CheckConnectionState();
-            CheckResult(NativeMethods.evo_irimager_get_thermal_image_size(out var width, out var height));
-            var buffer = new ushort[height, width];
-            CheckResult(NativeMethods.evo_irimager_get_thermal_image(out _, out _, buffer));
-            return buffer;
-        }
 
         public void SetPaletteFormat(OptrisColoringPalette format, OptrisPaletteScalingMethod scale)
         {
             CheckConnectionState();
             CheckResult(NativeMethods.evo_irimager_set_palette((int)format));
             CheckResult(NativeMethods.evo_irimager_set_palette_scale((int)scale));
-        }
-
-        public void SetTemperatureRange(int min, int max)
-        {
-            CheckConnectionState();
-            CheckResult(NativeMethods.evo_irimager_set_temperature_range(min, max));
-        }
-
-        public void TriggerShutter()
-        {
-            CheckConnectionState();
-            CheckResult(NativeMethods.evo_irimager_trigger_shutter_flag());
-        }
-
-        public void SetRadiationParameters(float emissivity, float transmissivity)
-        {
-            SetRadiationParameters(emissivity, transmissivity, -999.0f);
-        }
-
-        public void SetRadiationParameters(float emissivity, float transmissivity, float ambient)
-        {
-            if (emissivity < 0 || 1 < emissivity) throw new ArgumentOutOfRangeException(nameof(emissivity), "Valid range is 0..1");
-            if (transmissivity < 0 || 1 < transmissivity) throw new ArgumentOutOfRangeException(nameof(transmissivity), "Valid range is 0..1");
-
-            CheckConnectionState();
-            CheckResult(NativeMethods.evo_irimager_set_radiation_parameters(emissivity, transmissivity, ambient));
         }
 
         private static void CheckResult(int result)
@@ -175,7 +125,7 @@ namespace libirimagerNet
 
         private void CheckConnectionState()
         {
-            if (!IsConnected) throw new IOException($"Camera is disconnected. Please connect first.");
+            if (!IsConnected) throw new IOException("Camera is disconnected. Please connect first.");
         }
     }
 }

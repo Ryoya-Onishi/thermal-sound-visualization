@@ -1,4 +1,17 @@
-﻿<UserControl x:Class="ThermalProfiler.Domain.ErrorDialog"
+﻿<!--
+File: ErrorDialog.xaml
+Project: Domain
+Created Date: 18/04/2021
+Author: Shun Suzuki
+=====
+Last Modified: 19/04/2021
+Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
+=====
+Copyright (c) 2021 Hapis Lab. All rights reserved.
+
+-->
+
+<UserControl x:Class="ThermalProfiler.Domain.ErrorDialog"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 

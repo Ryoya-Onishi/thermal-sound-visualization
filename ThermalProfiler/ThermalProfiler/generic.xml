@@ -3,7 +3,7 @@
   <serial>0</serial>
   <!-- Provide serial number, if you attach more than one camera -->
   <videoformatindex>1</videoformatindex>
-  <!-- index of the used video format (USB enpoint) -->
+  <!-- index of the used video format (USB endpoint) -->
   <formatspath>.\</formatspath>
   <!-- <calipath></calipath> -->
   <!-- Uncomment the following lines to specify user-defined parameters for the desired optic

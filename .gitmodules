@@ -1,0 +1,3 @@
+[submodule "ThermalProfiler\\ps4000lib"]
+	path = ThermalProfiler\\ps4000lib
+	url = https://github.com/sssssssuzuki/ps4000lib.git

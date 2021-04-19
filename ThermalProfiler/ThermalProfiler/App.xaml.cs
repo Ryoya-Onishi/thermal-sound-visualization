@@ -1,8 +1,6 @@
-﻿using System.Windows;
-
-namespace ThermalProfiler
+﻿namespace ThermalProfiler
 {
-    public partial class App : Application
+    public partial class App
     {
     }
 }
