@@ -30,7 +30,8 @@ Copyright (c) 2021 Hapis Lab. All rights reserved.
         FontFamily="{DynamicResource MaterialDesignFont}" 
         WindowStyle="None" WindowStartupLocation="CenterScreen"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"
-        ResizeMode="CanResize">
+        ResizeMode="CanResize"
+        Closing="Window_Closing">
 
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"/>
