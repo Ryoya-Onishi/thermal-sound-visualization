@@ -117,14 +117,27 @@ namespace ThermalProfiler
             });
         }
 
+        public int x0 = 160;
+        public int y0 = 190;
+
         private async Task ImageGrabberMethod()
         {
+            
             while (_grabImage)
             {
                 try
                 {
                     var images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
+
+                    var rawT = images.ThermalImage[x0, y0];
+                    var T = ConvertToTemp(rawT);
+
+                    var maxTemp = GetMaxTemperatuer(images);
+
+                    //Console.WriteLine(T);
+                    
+
                 }
                 catch (IOException ex)
                 {
@@ -138,5 +151,42 @@ namespace ThermalProfiler
                 }
             }
         }
+
+        private double GetMaxTemperatuer(ThermalPaletteImage images)
+        {
+            var temp = 0d;
+            var DataList_in_area = new List<double>();
+
+            int j_max = 0;
+            int i_max = 0;
+
+            for (int i = 0; i < 380; i++)
+            {
+                for (int j = 0; j < 280; j++)
+                {
+                    if (temp < ConvertToTemp(images.ThermalImage[j, i]))
+                    {
+                        temp = ConvertToTemp(images.ThermalImage[j, i]);
+
+                        j_max = j;
+                        i_max = i;
+                    }
+                    DataList_in_area.Add(temp);
+                }
+            }
+
+            temp = ConvertToTemp(images.ThermalImage[j_max, i_max]);
+
+            Console.WriteLine(j_max + "," + i_max);
+
+            return temp;
+        }
+
+        public static double ConvertToTemp(ushort data)
+        {
+            return (data - 1000.0) / 10.0;
+        }
+
+        
     }
 }
