@@ -28,6 +28,7 @@ using AUTD3Sharp;
 using System.Collections.Generic;
 using AUTD3Sharp.Utils;
 using System.Linq;
+using System.Diagnostics;
 
 namespace ThermalProfiler
 {
@@ -122,10 +123,58 @@ namespace ThermalProfiler
 
         public int x0 = 160;
         public int y0 = 190;
+        private static string GetIfname()
+        {
+            var adapters = AUTD.EnumerateAdapters();
+            var etherCATAdapters = adapters as EtherCATAdapter[] ?? adapters.ToArray();
+            foreach (var (adapter, index) in etherCATAdapters.Select((adapter, index) => (adapter, index)))
+            {
+                Console.WriteLine($"[{index}]: {adapter}");
+            }
+
+            Console.Write("Choose number: ");
+            int i;
+            while (!int.TryParse(Console.ReadLine(), out i)) { }
+            return etherCATAdapters[i].Name;
+        }
+
+        private bool isNotAppendedGain = true;
+
+        private Stopwatch sw_autd = new Stopwatch();
+        private Stopwatch sw_thermo = new Stopwatch();
+
+        
 
         private async Task ImageGrabberMethod()
         {
-            
+            AUTD autd = new AUTD();
+            autd.AddDevice(Vector3f.Zero, Vector3f.Zero);
+
+            //var ifname = GetIfname();
+            var ifname = @"\Device\NPF_{70548BB5-E7B1-4538-91A5-41FA6A1500C2}";
+
+            var link = Link.SOEMLink(ifname, autd.NumDevices);
+
+            if (!autd.OpenWith(link))
+            {
+                Console.WriteLine(AUTD.LastError);
+                return;
+            }
+
+            const float x = AUTD.AUTDWidth / 2;
+            const float y = AUTD.AUTDHeight / 2;
+            const float z = 150;
+
+            var focalPoint = new Vector3f(x, y, z);
+
+            var mod = Modulation.StaticModulation();
+            autd.AppendModulation(mod);
+
+            var gain = Gain.FocalPointGain(focalPoint);
+
+            sw_autd.Start();
+            sw_thermo.Start();
+          
             while (_grabImage)
             {
                 try
@@ -133,14 +182,30 @@ namespace ThermalProfiler
                     var images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
 
-                    var rawT = images.ThermalImage[x0, y0];
+                    var rawT = images.ThermalImage[126, 182];
                     var T = ConvertToTemp(rawT);
 
-                    var maxTemp = GetMaxTemperatuer(images);
+                    //var maxTemp = GetMaxTemperatuer(images);
+
+                    if(sw_autd.ElapsedMilliseconds > 2000 && isNotAppendedGain)
+                    {
+                        gain = Gain.FocalPointGain(focalPoint);
+                        autd.AppendGain(gain);
+                        isNotAppendedGain = false;
+                    }
+                    else if(sw_autd.ElapsedMilliseconds > 2200)
+                    {
+                        autd.Stop();
+                        sw_autd.Restart();
+                        isNotAppendedGain = true;
+                    }
+
+                    if (!isNotAppendedGain)
+                    {
+                        Console.WriteLine((sw_autd.ElapsedMilliseconds-2000) + "," + T);
+                    }
 
                     //Console.WriteLine(T);
-                    
-
                 }
                 catch (IOException ex)
                 {
@@ -153,6 +218,9 @@ namespace ThermalProfiler
                     _grabImage = false;
                 }
             }
+
+            autd.Close();
+            autd.Dispose();
         }
 
         private double GetMaxTemperatuer(ThermalPaletteImage images)
