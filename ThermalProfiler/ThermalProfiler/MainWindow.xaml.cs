@@ -33,58 +33,10 @@ namespace ThermalProfiler
 {
     public partial class MainWindow : Window
     {
-
-        AUTD autd;
-
-
         public MainWindow()
         {
             InitializeComponent();
-
-            autd = new AUTD();
-            autd.AddDevice(Vector3f.Zero, Vector3f.Zero);
-
-            var ifname = GetIfname();
-
-            var link = Link.SOEMLink(ifname, autd.NumDevices);
-
-            if (!autd.OpenWith(link))
-            {
-                Console.WriteLine(AUTD.LastError);
-                return;
-            }
-
-            const float x = AUTD.AUTDWidth / 2;
-            const float y = AUTD.AUTDHeight / 2;
-            const float z = 150;
-
-            var mod = Modulation.StaticModulation();
-            autd.AppendModulation(mod);
-
-            var gain = Gain.FocalPointGain(new Vector3f(x, y, z));
-            autd.AppendGain(gain);
-
-            foreach (var (firm, index) in autd.FirmwareInfoList().Select((firm, i) => (firm, i)))
-                Console.WriteLine($"AUTD{index}:{firm}");
-
-            
         }
-
-        private static string GetIfname()
-        {
-            var adapters = AUTD.EnumerateAdapters();
-            var etherCATAdapters = adapters as EtherCATAdapter[] ?? adapters.ToArray();
-            foreach (var (adapter, index) in etherCATAdapters.Select((adapter, index) => (adapter, index)))
-            {
-                Console.WriteLine($"[{index}]: {adapter}");
-            }
-
-            Console.Write("Choose number: ");
-            int i;
-            while (!int.TryParse(Console.ReadLine(), out i)) { }
-            return etherCATAdapters[i].Name;
-        }
-
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             DragMove();
