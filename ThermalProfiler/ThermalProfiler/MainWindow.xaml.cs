@@ -11,24 +11,24 @@
  * 
  */
 
+using AUTD3Sharp;
+using AUTD3Sharp.Utils;
 using libirimagerNet;
 using MaterialDesignThemes.Wpf;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using ThermalProfiler.Domain;
-using AUTD3Sharp;
-using System.Collections.Generic;
-using AUTD3Sharp.Utils;
-using System.Linq;
-using System.Diagnostics;
 
 namespace ThermalProfiler
 {
@@ -143,7 +143,7 @@ namespace ThermalProfiler
         private Stopwatch sw_autd = new Stopwatch();
         private Stopwatch sw_thermo = new Stopwatch();
 
-        
+
 
         private async Task ImageGrabberMethod()
         {
@@ -177,35 +177,59 @@ namespace ThermalProfiler
 
             long t0 = 0;
 
+            long t = 0;
+            long delta_time = 0;
+
+            double T0 = 0;
+
+            double T = 0;
+            double delta_T = 0;
+
+            ThermalPaletteImage images;
+
+            long radiatingTime = 160;
+            long intervalTime = 10000;
+
+            int x_T = 126;
+            int y_T = 182; ;
+
+
             while (_grabImage)
             {
                 try
                 {
-                    var images = _irDirectInterface.ThermalPaletteImage;
+                    images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
 
-                    var rawT = images.ThermalImage[126, 182];
-                    var T = ConvertToTemp(rawT);
+                    //var maxTemp = GetMaxTemperatuer(images);
 
-                    //var maxTemp = GetMaxTemperatuer(images);              
+                    T = ConvertToTemp(images.ThermalImage[x_T, y_T]);
+                    
+                    t = sw_autd.ElapsedMilliseconds;
 
-                    if(sw_autd.ElapsedMilliseconds > 20000 && isNotAppendedGain)
+                    if (sw_autd.ElapsedMilliseconds > intervalTime && isNotAppendedGain)
                     {
+                        T0 = ConvertToTemp(images.ThermalImage[x_T, y_T]);
                         t0 = sw_autd.ElapsedMilliseconds;
                         gain = Gain.FocalPointGain(focalPoint);
                         autd.AppendGain(gain);
                         isNotAppendedGain = false;
                     }
-                    else if(sw_autd.ElapsedMilliseconds > 20500)
+                    else if (sw_autd.ElapsedMilliseconds > intervalTime + radiatingTime)
                     {
                         autd.Stop();
                         sw_autd.Restart();
-                        isNotAppendedGain = true;
+                        isNotAppendedGain = true;                      
                     }
 
-                    if (!isNotAppendedGain)
+                    if (!isNotAppendedGain )
                     {
-                        Console.WriteLine((sw_autd.ElapsedMilliseconds-t0) + "," + T);
+                        //Console.WriteLine("t and T : " + (sw_autd.ElapsedMilliseconds - t0) + "," + T);
+
+                        delta_T = ConvertToTemp(images.ThermalImage[x_T, y_T]) - T0;
+                        delta_time = sw_autd.ElapsedMilliseconds - t0;
+
+                        Console.WriteLine((sw_autd.ElapsedMilliseconds - t0) + "," + delta_T / (delta_time * 0.001));
                     }
 
                     //Console.WriteLine(T);
