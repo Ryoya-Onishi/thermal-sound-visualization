@@ -31,7 +31,7 @@ Copyright (c) 2021 Hapis Lab. All rights reserved.
         WindowStyle="None" WindowStartupLocation="CenterScreen"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"
         ResizeMode="CanResize"
-        Closing="Window_Closing">
+  >
 
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"/>

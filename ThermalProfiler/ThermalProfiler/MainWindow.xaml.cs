@@ -89,11 +89,6 @@ namespace ThermalProfiler
         {
             DragMove();
         }
-
-        private void Window_Closing(object sender, CancelEventArgs e)
-        {
-            autd.Dispose();
-        }
     }
 
     internal class MainWindowModel : INotifyPropertyChanged
