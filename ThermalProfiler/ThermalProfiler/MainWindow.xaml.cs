@@ -174,7 +174,9 @@ namespace ThermalProfiler
 
             sw_autd.Start();
             sw_thermo.Start();
-          
+
+            long t0 = 0;
+
             while (_grabImage)
             {
                 try
@@ -185,15 +187,16 @@ namespace ThermalProfiler
                     var rawT = images.ThermalImage[126, 182];
                     var T = ConvertToTemp(rawT);
 
-                    //var maxTemp = GetMaxTemperatuer(images);
+                    //var maxTemp = GetMaxTemperatuer(images);              
 
-                    if(sw_autd.ElapsedMilliseconds > 2000 && isNotAppendedGain)
+                    if(sw_autd.ElapsedMilliseconds > 20000 && isNotAppendedGain)
                     {
+                        t0 = sw_autd.ElapsedMilliseconds;
                         gain = Gain.FocalPointGain(focalPoint);
                         autd.AppendGain(gain);
                         isNotAppendedGain = false;
                     }
-                    else if(sw_autd.ElapsedMilliseconds > 2200)
+                    else if(sw_autd.ElapsedMilliseconds > 20500)
                     {
                         autd.Stop();
                         sw_autd.Restart();
@@ -202,7 +205,7 @@ namespace ThermalProfiler
 
                     if (!isNotAppendedGain)
                     {
-                        Console.WriteLine((sw_autd.ElapsedMilliseconds-2000) + "," + T);
+                        Console.WriteLine((sw_autd.ElapsedMilliseconds-t0) + "," + T);
                     }
 
                     //Console.WriteLine(T);
