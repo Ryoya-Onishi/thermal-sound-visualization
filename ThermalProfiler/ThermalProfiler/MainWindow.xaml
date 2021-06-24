@@ -18,7 +18,7 @@ Copyright (c) 2021 Hapis Lab. All rights reserved.
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ThermalProfiler"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
+        Title="MainWindow" Height="378" Width="456"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:converter="clr-namespace:ThermalProfiler.Converter"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
@@ -46,8 +46,8 @@ Copyright (c) 2021 Hapis Lab. All rights reserved.
     </Window.Resources>
 
     <Grid>
-        <materialDesign:DialogHost Identifier="MessageDialogHost" />
-        <Grid>
+        <materialDesign:DialogHost Identifier="MessageDialogHost" Margin="0,0,10,0" />
+        <Grid Margin="0,0,30,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
