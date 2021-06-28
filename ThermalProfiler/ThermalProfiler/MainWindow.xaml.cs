@@ -190,9 +190,8 @@ namespace ThermalProfiler
             long radiatingTime = 160;
             long intervalTime = 10000;
 
-            int x_T = 126;
-            int y_T = 182; ;
 
+            byte duty = 120;
 
             while (_grabImage)
             {
@@ -211,7 +210,7 @@ namespace ThermalProfiler
                     {
                         T0 = ConvertToTemp(images.ThermalImage[x_T, y_T]);
                         t0 = sw_autd.ElapsedMilliseconds;
-                        gain = Gain.FocalPointGain(focalPoint);
+                        gain = Gain.FocalPointGain(focalPoint,duty);
                         autd.AppendGain(gain);
                         isNotAppendedGain = false;
                     }
