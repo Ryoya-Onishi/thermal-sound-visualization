@@ -25,6 +25,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -190,8 +191,12 @@ namespace ThermalProfiler
             long radiatingTime = 160;
             long intervalTime = 10000;
 
+            int x_T = 148;
+            int y_T = 203;
 
-            byte duty = 120;
+            byte duty = 255;
+
+            var array_T0 = new double[288, 388];
 
             while (_grabImage)
             {
@@ -200,17 +205,26 @@ namespace ThermalProfiler
                     images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
 
-                    //var maxTemp = GetMaxTemperatuer(images);
 
                     T = ConvertToTemp(images.ThermalImage[x_T, y_T]);
-                    
+
                     t = sw_autd.ElapsedMilliseconds;
 
                     if (sw_autd.ElapsedMilliseconds > intervalTime && isNotAppendedGain)
                     {
+                        array_T0 = new double[images.ThermalImage.GetLength(0), images.ThermalImage.GetLength(1)]; ;
+
+                        for (var i = 0; i < images.ThermalImage.GetLength(0); i++)
+                        {
+                            for (var j = 0; j < images.ThermalImage.GetLength(1); j++)
+                            {
+                                array_T0[i, j] = ConvertToTemp(images.ThermalImage[i, j]);
+                            }
+                        }
+
                         T0 = ConvertToTemp(images.ThermalImage[x_T, y_T]);
                         t0 = sw_autd.ElapsedMilliseconds;
-                        gain = Gain.FocalPointGain(focalPoint,duty);
+                        gain = Gain.FocalPointGain(focalPoint, duty);
                         autd.AppendGain(gain);
                         isNotAppendedGain = false;
                     }
@@ -218,15 +232,30 @@ namespace ThermalProfiler
                     {
                         autd.Stop();
                         sw_autd.Restart();
-                        isNotAppendedGain = true;                      
+                        isNotAppendedGain = true;
                     }
 
-                    if (!isNotAppendedGain )
+                    if (!isNotAppendedGain)
                     {
-                        //Console.WriteLine("t and T : " + (sw_autd.ElapsedMilliseconds - t0) + "," + T);
+                        //var maxTemp = GetMaxTemperatuer(images);
 
                         delta_T = ConvertToTemp(images.ThermalImage[x_T, y_T]) - T0;
                         delta_time = sw_autd.ElapsedMilliseconds - t0;
+
+                        var sb = new StringBuilder();
+                        for (var i = 0; i < images.ThermalImage.GetLength(0); i++)
+                        {
+                            for (var j = 0; j < images.ThermalImage.GetLength(1); j++)
+                            {
+                                if (j != 0) sb.Append(",");
+                                delta_T = ConvertToTemp(images.ThermalImage[i, j]) - array_T0[i, j];
+                                sb.Append((delta_T * 1000) / delta_time);
+                            }
+                            sb.AppendLine();
+                        }
+
+                        using var sw = new StreamWriter("result_dT_dt/" + (sw_autd.ElapsedMilliseconds - t0) + ".csv");
+                        sw.Write(sb.ToString());
 
                         Console.WriteLine((sw_autd.ElapsedMilliseconds - t0) + "," + delta_T / (delta_time * 0.001));
                     }
@@ -284,6 +313,6 @@ namespace ThermalProfiler
             return (data - 1000.0) / 10.0;
         }
 
-        
+
     }
 }
