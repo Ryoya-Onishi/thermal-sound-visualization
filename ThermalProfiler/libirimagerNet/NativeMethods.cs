@@ -31,7 +31,7 @@ namespace libirimagerNet
         public static extern int evo_irimager_get_palette_image(out int w, out int h, IntPtr data);
 
         [DllImport("libirimager.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int evo_irimager_get_thermal_palette_image(int wThermal, int hThermal, ushort[,] dataThermal, int wPalette, int hPalette, IntPtr dataPalette);
+        public static extern int evo_irimager_get_thermal_palette_image(int wThermal, int hThermal, float[,] dataThermal, int wPalette, int hPalette, IntPtr dataPalette);
         #endregion
 
         #region option

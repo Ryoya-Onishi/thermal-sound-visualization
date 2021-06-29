@@ -78,7 +78,7 @@ namespace libirimagerNet
                 CheckResult(NativeMethods.evo_irimager_get_palette_image_size(out var paletteWidth, out var paletteHeight));
                 CheckResult(NativeMethods.evo_irimager_get_thermal_image_size(out var thermalWidth, out var thermalHeight));
 
-                var thermalImage = new ushort[thermalHeight, thermalWidth];
+                var thermalImage = new float[thermalHeight, thermalWidth];
                 var paletteImage = new Bitmap(paletteWidth, paletteHeight, pixelFormat);
                 var rect = new Rectangle(0, 0, paletteImage.Width, paletteImage.Height);
                 var data = paletteImage.LockBits(rect, ImageLockMode.ReadWrite, paletteImage.PixelFormat);

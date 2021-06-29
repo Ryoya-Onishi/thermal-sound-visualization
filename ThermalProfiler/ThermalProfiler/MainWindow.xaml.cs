@@ -279,7 +279,7 @@ namespace ThermalProfiler
             return temp;
         }
 
-        public static double ConvertToTemp(ushort data)
+        public static double ConvertToTemp(float data)
         {
             return (data - 1000.0) / 10.0;
         }
