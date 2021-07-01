@@ -188,15 +188,17 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 160;
-            long intervalTime = 10000;
+            long radiatingTime = 40;
+            long intervalTime = 5000;
 
-            int x_T = 148;
-            int y_T = 203;
+            int x_T = 133;
+            int y_T = 183;
 
-            byte duty = 255;
+            byte duty = 0;
 
             var array_T0 = new double[288, 388];
+
+            int trial_times = 0;
 
             while (_grabImage)
             {
@@ -205,6 +207,11 @@ namespace ThermalProfiler
                     images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
 
+                    if(trial_times >= 10)
+                    {
+                        duty += 20;
+                        trial_times = 0;
+                    }
 
                     T = ConvertToTemp(images.ThermalImage[x_T, y_T]);
 
@@ -254,10 +261,20 @@ namespace ThermalProfiler
                             sb.AppendLine();
                         }
 
-                        using var sw = new StreamWriter("result_dT_dt/" + (sw_autd.ElapsedMilliseconds - t0) + ".csv");
-                        sw.Write(sb.ToString());
+                        //if(delta_time > 25)
+                        //{
+                        //    Console.WriteLine(delta_time + "," + delta_T / (delta_time * 0.001));
+                        //}
 
-                        Console.WriteLine((sw_autd.ElapsedMilliseconds - t0) + "," + delta_T / (delta_time * 0.001));
+                        if(delta_time > 20)
+                        {
+                            using var sw = new StreamWriter("result_dT_dt/" + "nairon_070101/" + "trial_" + trial_times.ToString()
+                           + "_duty" + duty + "_" + delta_time + ".csv");
+
+                            sw.Write(sb.ToString());
+
+                            trial_times++;
+                        }
                     }
 
                     //Console.WriteLine(T);
