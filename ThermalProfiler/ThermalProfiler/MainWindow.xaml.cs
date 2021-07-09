@@ -188,17 +188,21 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 40;
-            long intervalTime = 5000;
+            long radiatingTime = 100;
+            long intervalTime = 10000;
 
             int x_T = 133;
             int y_T = 183;
 
-            byte duty = 0;
+            byte amplitude = 0;
 
             var array_T0 = new double[288, 388];
 
             int trial_times = 0;
+
+            var directoryName = "nairon/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
+
+            if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
             while (_grabImage)
             {
@@ -207,15 +211,16 @@ namespace ThermalProfiler
                     images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
 
-                    if(trial_times >= 10)
+                    if (trial_times >= 10)
                     {
-                        duty += 20;
+                        amplitude += 20;
                         trial_times = 0;
                     }
 
-                    T = ConvertToTemp(images.ThermalImage[x_T, y_T]);
+                    //ToDo: 余計なものを削る
+                    //T = ConvertToTemp(images.ThermalImage[x_T, y_T]);
 
-                    t = sw_autd.ElapsedMilliseconds;
+                    //t = sw_autd.ElapsedMilliseconds;
 
                     if (sw_autd.ElapsedMilliseconds > intervalTime && isNotAppendedGain)
                     {
@@ -229,9 +234,9 @@ namespace ThermalProfiler
                             }
                         }
 
-                        T0 = ConvertToTemp(images.ThermalImage[x_T, y_T]);
+                        //T0 = ConvertToTemp(images.ThermalImage[x_T, y_T]);
                         t0 = sw_autd.ElapsedMilliseconds;
-                        gain = Gain.FocalPointGain(focalPoint, duty);
+                        gain = Gain.FocalPointGain(focalPoint, amplitude);
                         autd.AppendGain(gain);
                         isNotAppendedGain = false;
                     }
@@ -244,9 +249,10 @@ namespace ThermalProfiler
 
                     if (!isNotAppendedGain)
                     {
-                        //var maxTemp = GetMaxTemperatuer(images);
+                        //var maxTemp = GetMaxTemperatuer(images);//全体の最高温度の点の座標を見たいとき
 
-                        delta_T = ConvertToTemp(images.ThermalImage[x_T, y_T]) - T0;
+                        //delta_T = ConvertToTemp(images.ThermalImage[x_T, y_T]) - T0;
+                        
                         delta_time = sw_autd.ElapsedMilliseconds - t0;
 
                         var sb = new StringBuilder();
@@ -261,15 +267,10 @@ namespace ThermalProfiler
                             sb.AppendLine();
                         }
 
-                        //if(delta_time > 25)
-                        //{
-                        //    Console.WriteLine(delta_time + "," + delta_T / (delta_time * 0.001));
-                        //}
-
-                        if(delta_time > 20)
+                        if (delta_time > 70)
                         {
-                            using var sw = new StreamWriter("result_dT_dt/" + "nairon_070101/" + "trial_" + trial_times.ToString()
-                           + "_duty" + duty + "_" + delta_time + ".csv");
+                            using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude
+                                + "_trial" + trial_times.ToString() + "_t" + delta_time + ".csv");
 
                             sw.Write(sb.ToString());
 
