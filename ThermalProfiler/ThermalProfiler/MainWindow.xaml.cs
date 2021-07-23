@@ -150,6 +150,8 @@ namespace ThermalProfiler
         {
             AUTD autd = new AUTD();
             autd.AddDevice(Vector3f.Zero, Vector3f.Zero);
+            //autd.AddDevice(Vector3f.Zero, Vector3f.Zero);
+
 
             //var ifname = GetIfname();
             var ifname = @"\Device\NPF_{70548BB5-E7B1-4538-91A5-41FA6A1500C2}";
@@ -189,18 +191,20 @@ namespace ThermalProfiler
             ThermalPaletteImage images;
 
             long radiatingTime = 100;
-            long intervalTime = 10000;
+            long intervalTime = 1000;
 
             int x_T = 133;
             int y_T = 183;
 
             byte amplitude = 0;
 
-            var array_T0 = new double[288, 388];
+            byte ampStep = 5;
+
+            var array_T0 = new double[288, 382];
 
             int trial_times = 0;
 
-            var directoryName = "nairon/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
+            var directoryName = "exp/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
@@ -213,7 +217,7 @@ namespace ThermalProfiler
 
                     if (trial_times >= 10)
                     {
-                        amplitude += 20;
+                        amplitude += ampStep;
                         trial_times = 0;
                     }
 
@@ -262,12 +266,14 @@ namespace ThermalProfiler
                             {
                                 if (j != 0) sb.Append(",");
                                 delta_T = ConvertToTemp(images.ThermalImage[i, j]) - array_T0[i, j];
-                                sb.Append((delta_T * 1000) / delta_time);
+                               
+                                //sb.Append((delta_T * 1000) / delta_time); //T'を求める
+                                sb.Append(delta_T); //dTを求める
                             }
                             sb.AppendLine();
                         }
 
-                        if (delta_time > 70)
+                        if (delta_time == 78)
                         {
                             using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude
                                 + "_trial" + trial_times.ToString() + "_t" + delta_time + ".csv");
