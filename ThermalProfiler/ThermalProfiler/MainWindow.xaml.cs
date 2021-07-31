@@ -149,31 +149,31 @@ namespace ThermalProfiler
         private async Task ImageGrabberMethod()
         {
             AUTD autd = new AUTD();
-            autd.AddDevice(Vector3f.Zero, Vector3f.Zero);
-            //autd.AddDevice(Vector3f.Zero, Vector3f.Zero);
-
+            autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
+            autd.AddDevice(new Vector3d(0,AUTD.AUTDHeight,0), Vector3d.Zero);
+            autd.AddDevice(new Vector3d(245,0,0), Vector3d.Zero);
+            autd.AddDevice(new Vector3d(245,AUTD.AUTDHeight,0), Vector3d.Zero);
 
             //var ifname = GetIfname();
             var ifname = @"\Device\NPF_{70548BB5-E7B1-4538-91A5-41FA6A1500C2}";
 
             var link = Link.SOEMLink(ifname, autd.NumDevices);
 
-            if (!autd.OpenWith(link))
+            if (!autd.Open(link))
             {
                 Console.WriteLine(AUTD.LastError);
                 return;
             }
 
-            const float x = AUTD.AUTDWidth / 2;
-            const float y = AUTD.AUTDHeight / 2;
-            const float z = 150;
+            const double x = 210;
+            const double y = AUTD.AUTDHeight;
+            const double z = 370;
 
-            var focalPoint = new Vector3f(x, y, z);
+            var focalPoint = new Vector3d(x, y, z);
 
-            var mod = Modulation.StaticModulation();
-            autd.AppendModulation(mod);
-
-            var gain = Gain.FocalPointGain(focalPoint);
+            var mod = Modulation.Static();
+            var gain = Gain.FocalPoint(focalPoint);
+            //autd.Send(gain, mod);
 
             sw_autd.Start();
             sw_thermo.Start();
@@ -196,7 +196,7 @@ namespace ThermalProfiler
             int x_T = 133;
             int y_T = 183;
 
-            byte amplitude = 0;
+            byte amplitude = 255;
 
             byte ampStep = 5;
 
@@ -240,8 +240,8 @@ namespace ThermalProfiler
 
                         //T0 = ConvertToTemp(images.ThermalImage[x_T, y_T]);
                         t0 = sw_autd.ElapsedMilliseconds;
-                        gain = Gain.FocalPointGain(focalPoint, amplitude);
-                        autd.AppendGain(gain);
+                        gain = Gain.FocalPoint(focalPoint, amplitude);
+                        autd.Send(gain,mod);
                         isNotAppendedGain = false;
                     }
                     else if (sw_autd.ElapsedMilliseconds > intervalTime + radiatingTime)
