@@ -206,7 +206,9 @@ namespace ThermalProfiler
 
             int trial_times = 0;
 
-            var directoryName = "exp/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
+            //var directoryName = "exp/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
+            var directoryName = "exp/3d/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
+
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
