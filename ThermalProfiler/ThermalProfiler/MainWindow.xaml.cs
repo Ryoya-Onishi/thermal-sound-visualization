@@ -192,13 +192,13 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 100;
-            long intervalTime = 1000;
+            long radiatingTime = 500;
+            long intervalTime = 2000;
 
             int x_T = 133;
             int y_T = 183;
 
-            byte amplitude = 0;
+            byte amplitude = 255;
 
             byte ampStep = 5;
 
@@ -219,7 +219,8 @@ namespace ThermalProfiler
                     images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
 
-                    if (trial_times >= 10)
+
+                    if (trial_times >= 100)
                     {
                         amplitude += ampStep;
                         trial_times = 0;
@@ -271,13 +272,14 @@ namespace ThermalProfiler
                                 if (j != 0) sb.Append(",");
                                 delta_T = ConvertToTemp(images.ThermalImage[i, j]) - array_T0[i, j];
                                
-                                //sb.Append((delta_T * 1000) / delta_time); //T'を求める
-                                sb.Append(delta_T); //dTを求める
+                                sb.Append((delta_T * 1000) / delta_time); //T'を求める
+                                //sb.Append(delta_T); //dTを求める
                             }
                             sb.AppendLine();
                         }
 
-                        if (delta_time == 78)
+
+                        if (delta_time > 450)
                         {
                             using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude
                                 + "_trial" + trial_times.ToString() + "_t" + delta_time + ".csv");
