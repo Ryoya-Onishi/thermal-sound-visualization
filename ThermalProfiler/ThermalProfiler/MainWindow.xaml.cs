@@ -150,7 +150,8 @@ namespace ThermalProfiler
         {
             AUTD autd = new AUTD();
             autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
-            //autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
+            autd.AddDevice(Vector3d.Zero,Vector3d.Zero);
+            //autd.AddDevice(new Vector3d(0, 150,300), new Vector3d(AUTD.Pi, 0, 0));
 
 
             //var ifname = GetIfname();
@@ -167,15 +168,56 @@ namespace ThermalProfiler
             foreach (var (firm, index) in autd.FirmwareInfoList().Select((firm, i) => (firm, i)))
                 Console.WriteLine($"AUTD {index}: {firm}");
 
-            const double x = AUTD.AUTDWidth / 2;
-            const double y = AUTD.AUTDHeight / 2;
-            const double z = 150;
+            //const double x = AUTD.AUTDWidth / 2;
+            //const double y = AUTD.AUTDHeight / 2;
+            //const double z = 150;
 
-            var focalPoint = new Vector3d(x, y, z);
+            //var focalPoint = new Vector3d(x, y, z);
+
+            //var mod = Modulation.Static();
+
+            //var gain = Gain.FocalPoint(focalPoint);
+
+
+            const double x = AUTD.AUTDWidth / 2;
+            const double y = 75;
+            const double z = 150.0;
+
+            autd.SilentMode = false;
 
             var mod = Modulation.Static();
+            autd.Send(mod);
 
-            var gain = Gain.FocalPoint(focalPoint);
+
+            //熱画像デモ
+            //const double radius = 10;
+            //const int size = 10;
+            //var center = new Vector3d(x, y, z);
+            //var stm = autd.STM();
+            //for (var i = 0; i < size; i++)
+            //{
+            //    var theta = 2 * AUTD.Pi * i / size;
+            //    var r = new Vector3d(Math.Cos(theta), 0, 0);
+            //    var f = Gain.FocalPoint(center + radius * r);
+            //    stm.AddSTMGain(f);
+            //}
+            //stm.StartSTM(0.3);
+
+            ////定在波LM
+            const double radius = 0;
+            const int size = 2;
+            var center = new Vector3d(x, y, z);
+            var stm = autd.STM();
+            for (var i = 0; i < size; i++)
+            {
+                var theta = 2 * AUTD.Pi * i / size;
+                var r = new Vector3d(0, 0, Math.Cos(theta));
+                var f = Gain.FocalPoint(center + radius * r);
+                stm.AddSTMGain(f);
+            }
+            stm.StartSTM(1);
+
+
 
             sw_autd.Start();
             sw_thermo.Start();
@@ -245,9 +287,9 @@ namespace ThermalProfiler
 
                         //T0 = ConvertToTemp(images.ThermalImage[x_T, y_T]);
                         t0 = sw_autd.ElapsedMilliseconds;
-                        gain = Gain.FocalPoint(focalPoint, amplitude);
-                        autd.Send(gain,mod);
-                        isNotAppendedGain = false;
+                        //gain = Gain.FocalPoint(focalPoint, amplitude);
+                        //autd.Send(gain,mod);
+                        //isNotAppendedGain = false;
                     }
                     else if (sw_autd.ElapsedMilliseconds > intervalTime + radiatingTime)
                     {
