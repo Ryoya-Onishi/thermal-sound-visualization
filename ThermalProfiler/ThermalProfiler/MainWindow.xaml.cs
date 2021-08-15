@@ -207,8 +207,8 @@ namespace ThermalProfiler
             int trial_times = 0;
 
             //var directoryName = "exp/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
-            var directoryName = "exp/3d/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
-
+            //var directoryName = "exp/3d/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
+            var directoryName = @"D:\onishi_Local2/exp/SingleFocus_change_interval/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
@@ -220,9 +220,10 @@ namespace ThermalProfiler
                     PaletteImage.Value = images.PaletteImage;
 
 
-                    if (trial_times >= 100)
+                    if (trial_times >= 10)
                     {
-                        amplitude += ampStep;
+                        //amplitude += ampStep;
+                        intervalTime += 500;
                         trial_times = 0;
                     }
 
@@ -279,14 +280,15 @@ namespace ThermalProfiler
                         }
 
 
-                        if (delta_time > 450)
+                        if (delta_time >= 77)
                         {
                             using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude
-                                + "_trial" + trial_times.ToString() + "_t" + delta_time + ".csv");
+                                + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime +  ".csv");
 
                             sw.Write(sb.ToString());
 
                             trial_times++;
+                            isNotAppendedGain = true; //一回目だけSを取得
                         }
                     }
 
