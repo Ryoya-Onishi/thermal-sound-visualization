@@ -192,23 +192,25 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 500;
-            long intervalTime = 2000;
+            long radiatingTime = 300;
+            long intervalTime = 10000;
 
             int x_T = 133;
             int y_T = 183;
 
-            byte amplitude = 255;
+            byte amplitude = 0;
 
-            byte ampStep = 5;
+            byte ampStep = 1;
 
             var array_T0 = new double[288, 382];
 
             int trial_times = 0;
 
+            int frameNum = 0;
+
             //var directoryName = "exp/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
             //var directoryName = "exp/3d/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
-            var directoryName = @"D:\onishi_Local2/exp/SingleFocus_change_interval/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            var directoryName = @"D:\onishi_Local2/exp/SingleFocus_change_Duty/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
@@ -220,19 +222,25 @@ namespace ThermalProfiler
                     PaletteImage.Value = images.PaletteImage;
 
 
-                    if (trial_times >= 10)
+                    if (trial_times >= 1)
                     {
-                        //amplitude += ampStep;
-                        intervalTime += 500;
+                        if (amplitude >= 255)
+                        {
+                            break;
+                        }
+                        amplitude += ampStep;
+                        //intervalTime += 500;
                         trial_times = 0;
+
                     }
 
+                   
                     //ToDo: 余計なものを削る
                     //T = ConvertToTemp(images.ThermalImage[x_T, y_T]);
 
                     //t = sw_autd.ElapsedMilliseconds;
 
-                    if (sw_autd.ElapsedMilliseconds > intervalTime && isNotAppendedGain)
+                    if (sw_autd.ElapsedMilliseconds > intervalTime*amplitude/255 + 1000 && isNotAppendedGain)
                     {
                         array_T0 = new double[images.ThermalImage.GetLength(0), images.ThermalImage.GetLength(1)]; ;
 
@@ -250,11 +258,12 @@ namespace ThermalProfiler
                         autd.Send(gain,mod);
                         isNotAppendedGain = false;
                     }
-                    else if (sw_autd.ElapsedMilliseconds > intervalTime + radiatingTime)
+                    else if (sw_autd.ElapsedMilliseconds > intervalTime*amplitude/255 + 1000 + radiatingTime)
                     {
                         autd.Stop();
                         sw_autd.Restart();
                         isNotAppendedGain = true;
+                        trial_times += 1;
                     }
 
                     if (!isNotAppendedGain)
@@ -280,15 +289,14 @@ namespace ThermalProfiler
                         }
 
 
-                        if (delta_time >= 77)
+                        if (delta_time > 175)
                         {
                             using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude
                                 + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime +  ".csv");
 
                             sw.Write(sb.ToString());
 
-                            trial_times++;
-                            isNotAppendedGain = true; //一回目だけSを取得
+                           isNotAppendedGain = true; //一回目だけdT_dtを取得
                         }
                     }
 
