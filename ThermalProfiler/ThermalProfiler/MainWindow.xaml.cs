@@ -150,7 +150,7 @@ namespace ThermalProfiler
         {
             AUTD autd = new AUTD();
             autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
-            autd.AddDevice(Vector3d.Zero,Vector3d.Zero);
+            //autd.AddDevice(Vector3d.Zero,Vector3d.Zero);
             //autd.AddDevice(new Vector3d(0, 150,300), new Vector3d(AUTD.Pi, 0, 0));
 
 
@@ -179,7 +179,7 @@ namespace ThermalProfiler
             //var gain = Gain.FocalPoint(focalPoint);
 
 
-            const double x = AUTD.AUTDWidth / 2;
+            const double x = AUTD.AUTDWidth / 2 - 20;
             const double y = 75;
             const double z = 150.0;
 
@@ -204,14 +204,14 @@ namespace ThermalProfiler
             //stm.StartSTM(0.3);
 
             ////定在波LM
-            const double radius = 0;
-            const int size = 2;
+            const double radius = 20;
+            const int size = 50;
             var center = new Vector3d(x, y, z);
             var stm = autd.STM();
             for (var i = 0; i < size; i++)
             {
                 var theta = 2 * AUTD.Pi * i / size;
-                var r = new Vector3d(0, 0, Math.Cos(theta));
+                var r = new Vector3d(Math.Cos(theta), Math.Sin(theta),0);
                 var f = Gain.FocalPoint(center + radius * r);
                 stm.AddSTMGain(f);
             }
@@ -234,7 +234,7 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 500;
+            long radiatingTime = 100;
             long intervalTime = 2000;
 
             int x_T = 133;
@@ -249,7 +249,7 @@ namespace ThermalProfiler
             int trial_times = 0;
 
             //var directoryName = "exp/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
-            var directoryName = "exp/3d/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
+            var directoryName = "exp/thermochromizm/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
 
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
