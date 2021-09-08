@@ -150,7 +150,7 @@ namespace ThermalProfiler
         {
             AUTD autd = new AUTD();
             autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
-            //autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
+            autd.AddDevice(new Vector3d(AUTD.AUTDWidth,0,0), Vector3d.Zero);
 
 
             //var ifname = GetIfname();
@@ -167,15 +167,17 @@ namespace ThermalProfiler
             foreach (var (firm, index) in autd.FirmwareInfoList().Select((firm, i) => (firm, i)))
                 Console.WriteLine($"AUTD {index}: {firm}");
 
-            const double x = AUTD.AUTDWidth / 2;
+            const double x = AUTD.AUTDWidth;
             const double y = AUTD.AUTDHeight / 2;
-            const double z = 150;
+            const double z = 220;
 
             var focalPoint = new Vector3d(x, y, z);
 
             var mod = Modulation.Static();
 
-            var gain = Gain.FocalPoint(focalPoint);
+            var gain = Gain.PlaneWave(new Vector3d(0, 0, 1), 255);
+
+            //var gain = Gain.FocalPoint(focalPoint);
 
             sw_autd.Start();
             sw_thermo.Start();
@@ -192,7 +194,7 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 300;
+            long radiatingTime = 3000;
             long intervalTime = 10000;
 
             int x_T = 133;
@@ -210,7 +212,7 @@ namespace ThermalProfiler
 
             //var directoryName = "exp/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
             //var directoryName = "exp/3d/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
-            var directoryName = @"D:\onishi_Local2/exp/SingleFocus_change_Duty/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            var directoryName = @"D:\onishi_Local2/exp/PlaneWave_reflect_water/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
@@ -222,13 +224,13 @@ namespace ThermalProfiler
                     PaletteImage.Value = images.PaletteImage;
 
 
-                    if (trial_times >= 1)
+                    if (trial_times >= 30)
                     {
                         if (amplitude >= 255)
                         {
-                            break;
+                           // break;
                         }
-                        amplitude += ampStep;
+                        //amplitude += ampStep;
                         //intervalTime += 500;
                         trial_times = 0;
 
@@ -240,7 +242,7 @@ namespace ThermalProfiler
 
                     //t = sw_autd.ElapsedMilliseconds;
 
-                    if (sw_autd.ElapsedMilliseconds > intervalTime*amplitude/255 + 1000 && isNotAppendedGain)
+                    if (sw_autd.ElapsedMilliseconds > intervalTime && isNotAppendedGain)
                     {
                         array_T0 = new double[images.ThermalImage.GetLength(0), images.ThermalImage.GetLength(1)]; ;
 
@@ -254,11 +256,12 @@ namespace ThermalProfiler
 
                         //T0 = ConvertToTemp(images.ThermalImage[x_T, y_T]);
                         t0 = sw_autd.ElapsedMilliseconds;
-                        gain = Gain.FocalPoint(focalPoint, amplitude);
-                        autd.Send(gain,mod);
+                        //gain = Gain.FocalPoint(focalPoint, amplitude);
+                        gain = Gain.PlaneWave(new Vector3d(0, 0, 1),255);
+                        autd.Send(gain);
                         isNotAppendedGain = false;
                     }
-                    else if (sw_autd.ElapsedMilliseconds > intervalTime*amplitude/255 + 1000 + radiatingTime)
+                    else if (sw_autd.ElapsedMilliseconds > intervalTime + radiatingTime)
                     {
                         autd.Stop();
                         sw_autd.Restart();
@@ -289,7 +292,7 @@ namespace ThermalProfiler
                         }
 
 
-                        if (delta_time > 175)
+                        if (delta_time > 2700)
                         {
                             using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude
                                 + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime +  ".csv");
