@@ -150,7 +150,7 @@ namespace ThermalProfiler
         {
             AUTD autd = new AUTD();
             autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
-            autd.AddDevice(new Vector3d(AUTD.AUTDWidth,0,0), Vector3d.Zero);
+            autd.AddDevice(new Vector3d(270,0,0), Vector3d.Zero);
 
 
             //var ifname = GetIfname();
@@ -167,17 +167,15 @@ namespace ThermalProfiler
             foreach (var (firm, index) in autd.FirmwareInfoList().Select((firm, i) => (firm, i)))
                 Console.WriteLine($"AUTD {index}: {firm}");
 
-            const double x = AUTD.AUTDWidth;
+            const double x = 230;
             const double y = AUTD.AUTDHeight / 2;
-            const double z = 220;
+            const double z = 150;
 
             var focalPoint = new Vector3d(x, y, z);
 
             var mod = Modulation.Static();
 
-            var gain = Gain.PlaneWave(new Vector3d(0, 0, 1), 255);
-
-            //var gain = Gain.FocalPoint(focalPoint);
+            var gain = Gain.FocalPoint(focalPoint);
 
             sw_autd.Start();
             sw_thermo.Start();
@@ -194,13 +192,10 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 3000;
-            long intervalTime = 10000;
+            long radiatingTime = 500;
+            long intervalTime = 2000;
 
-            int x_T = 133;
-            int y_T = 183;
-
-            byte amplitude = 0;
+            byte amplitude = 255;
 
             byte ampStep = 1;
 
@@ -210,9 +205,7 @@ namespace ThermalProfiler
 
             int frameNum = 0;
 
-            //var directoryName = "exp/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
-            //var directoryName = "exp/3d/" + DateTime.Now.ToString("yyyy_MM_dd_HH");
-            var directoryName = @"D:\onishi_Local2/exp/PlaneWave_reflect_water/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            var directoryName = @"D:\onishi_Local2/exp/Reflect_hand/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
@@ -223,7 +216,6 @@ namespace ThermalProfiler
                     images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
 
-
                     if (trial_times >= 30)
                     {
                         if (amplitude >= 255)
@@ -231,16 +223,9 @@ namespace ThermalProfiler
                            // break;
                         }
                         //amplitude += ampStep;
-                        //intervalTime += 500;
                         trial_times = 0;
 
                     }
-
-                   
-                    //ToDo: 余計なものを削る
-                    //T = ConvertToTemp(images.ThermalImage[x_T, y_T]);
-
-                    //t = sw_autd.ElapsedMilliseconds;
 
                     if (sw_autd.ElapsedMilliseconds > intervalTime && isNotAppendedGain)
                     {
@@ -254,10 +239,8 @@ namespace ThermalProfiler
                             }
                         }
 
-                        //T0 = ConvertToTemp(images.ThermalImage[x_T, y_T]);
                         t0 = sw_autd.ElapsedMilliseconds;
-                        //gain = Gain.FocalPoint(focalPoint, amplitude);
-                        gain = Gain.PlaneWave(new Vector3d(0, 0, 1),255);
+                        gain = Gain.FocalPoint(focalPoint, amplitude);
                         autd.Send(gain);
                         isNotAppendedGain = false;
                     }
@@ -270,11 +253,7 @@ namespace ThermalProfiler
                     }
 
                     if (!isNotAppendedGain)
-                    {
-                        //var maxTemp = GetMaxTemperatuer(images);//全体の最高温度の点の座標を見たいとき
-
-                        //delta_T = ConvertToTemp(images.ThermalImage[x_T, y_T]) - T0;
-                        
+                    {                        
                         delta_time = sw_autd.ElapsedMilliseconds - t0;
 
                         var sb = new StringBuilder();
@@ -291,8 +270,7 @@ namespace ThermalProfiler
                             sb.AppendLine();
                         }
 
-
-                        if (delta_time > 2700)
+                        if (delta_time > 400)
                         {
                             using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude
                                 + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime +  ".csv");
@@ -302,8 +280,6 @@ namespace ThermalProfiler
                            isNotAppendedGain = true; //一回目だけdT_dtを取得
                         }
                     }
-
-                    //Console.WriteLine(T);
                 }
                 catch (IOException ex)
                 {
