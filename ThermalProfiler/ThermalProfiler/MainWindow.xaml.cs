@@ -150,7 +150,9 @@ namespace ThermalProfiler
         {
             AUTD autd = new AUTD();
             autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
-            autd.AddDevice(new Vector3d(222,0,0), Vector3d.Zero);
+            autd.AddDevice(new Vector3d(0,AUTD.AUTDHeight,0), Vector3d.Zero);
+            autd.AddDevice(new Vector3d(222, 0, 0), Vector3d.Zero);
+            autd.AddDevice(new Vector3d(222, AUTD.AUTDHeight, 0), Vector3d.Zero);
 
 
             //var ifname = GetIfname();
@@ -167,9 +169,9 @@ namespace ThermalProfiler
             foreach (var (firm, index) in autd.FirmwareInfoList().Select((firm, i) => (firm, i)))
                 Console.WriteLine($"AUTD {index}: {firm}");
 
-            const double x = 207;
-            const double y = 70;
-            const double z = 155;
+            const double x = 205;
+            const double y = 152;
+            const double z = 180;
 
             var focalPoint = new Vector3d(x, y, z);
 
@@ -192,12 +194,12 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 2000;
+            long radiatingTime = 30000;
             long intervalTime = 3000;
 
-            byte amplitude = 0;
+            byte amplitude = 255;
 
-            byte ampStep = 30;
+            byte ampStep = 5;
 
             var array_T0 = new double[288, 382];
 
@@ -205,7 +207,11 @@ namespace ThermalProfiler
 
             int frameNum = 0;
 
-            var directoryName = @"D:\onishi_Local2/exp/Reflect_Finger/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            var directoryName = @"D:\onishi_Local2/Nature/exp/Reflect_Acryle/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+
+            int z_change = 170;
+            float y_change = 151.4f;
+            
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
@@ -222,7 +228,10 @@ namespace ThermalProfiler
                         {
                            //break;
                         }
-                        amplitude += ampStep;
+                        //y_change += 1;
+                        //z_change += 1;
+
+                        //amplitude -= ampStep;
                         trial_times = 0;
 
                     }
@@ -240,7 +249,7 @@ namespace ThermalProfiler
                         }
 
                         t0 = sw_autd.ElapsedMilliseconds;
-                        gain = Gain.FocalPoint(focalPoint, amplitude);
+                        gain = Gain.FocalPoint(new Vector3d(x,y_change,z_change), amplitude); //AUTD照射
                         autd.Send(gain);
                         isNotAppendedGain = false;
                         
@@ -264,24 +273,29 @@ namespace ThermalProfiler
                             {
                                 if (j != 0) sb.Append(",");
                                 delta_T = ConvertToTemp(images.ThermalImage[i, j]) - array_T0[i, j];
+
                                
                                 //sb.Append((delta_T * 1000) / delta_time); //T'を求める
                                 //sb.Append(delta_T); //dTを求める
-                                sb.Append(images.ThermalImage[i, j]);
+                                sb.Append(ConvertToTemp(images.ThermalImage[i, j]));
                             }
                             sb.AppendLine();
                         }
 
                         if (delta_time > 0)
                         {
-                            if (!Directory.Exists(directoryName + "/duty" + amplitude)) Directory.CreateDirectory(directoryName + "/duty" + amplitude);
+                            //if (!Directory.Exists(directoryName + "/duty" + amplitude)) Directory.CreateDirectory(directoryName + "/duty" + amplitude);
 
-                            //using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude  + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime +  ".csv");
-                            using var sw = new StreamWriter(directoryName + "/"  +"duty" + amplitude +"/" +delta_time + ".csv");
+                            //using var sw = new StreamWriter(directoryName + "/" + "z" + z_change  + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime +  ".csv");
+                            //using var sw = new StreamWriter(directoryName + "/" + "y" + y_change + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime + ".csv");
+                            
+                            using var sw = new StreamWriter(directoryName + "/" + delta_time + ".csv");
+
+                            //using var sw = new StreamWriter(directoryName + "/"  +"duty" + amplitude +"_" +delta_time + ".csv");
 
                             sw.Write(sb.ToString());
 
-                           //isNotAppendedGain = true; //一回目だけdT_dtを取得
+                            //isNotAppendedGain = true; //一回目だけdT_dtを取得
                         }
                     }
                 }
