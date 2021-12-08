@@ -141,6 +141,9 @@ namespace ThermalProfiler
 
         private bool isNotAppendedGain = true;
 
+        private Stopwatch sw_all = new Stopwatch();
+
+
         private Stopwatch sw_autd = new Stopwatch();
         private Stopwatch sw_thermo = new Stopwatch();
 
@@ -179,6 +182,7 @@ namespace ThermalProfiler
 
             var gain = Gain.FocalPoint(focalPoint);
 
+            sw_all.Start();
             sw_autd.Start();
             sw_thermo.Start();
 
@@ -226,7 +230,7 @@ namespace ThermalProfiler
                     {
                         if (amplitude >= 255)
                         {
-                           //break;
+                            //break;
                         }
                         //y_change += 1;
                         //z_change += 1;
@@ -274,7 +278,7 @@ namespace ThermalProfiler
                                 if (j != 0) sb.Append(",");
                                 delta_T = ConvertToTemp(images.ThermalImage[i, j]) - array_T0[i, j];
 
-                               
+
                                 //sb.Append((delta_T * 1000) / delta_time); //T'を求める
                                 //sb.Append(delta_T); //dTを求める
                                 sb.Append(ConvertToTemp(images.ThermalImage[i, j]));
@@ -282,16 +286,17 @@ namespace ThermalProfiler
                             sb.AppendLine();
                         }
 
-                        if (delta_time > 0)
+                        if (true)
                         {
                             //if (!Directory.Exists(directoryName + "/duty" + amplitude)) Directory.CreateDirectory(directoryName + "/duty" + amplitude);
 
                             //using var sw = new StreamWriter(directoryName + "/" + "z" + z_change  + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime +  ".csv");
                             //using var sw = new StreamWriter(directoryName + "/" + "y" + y_change + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime + ".csv");
-                            
-                            using var sw = new StreamWriter(directoryName + "/" + delta_time + ".csv");
 
+                            //using var sw = new StreamWriter(directoryName + "/" + delta_time + ".csv");
                             //using var sw = new StreamWriter(directoryName + "/"  +"duty" + amplitude +"_" +delta_time + ".csv");
+
+                            using var sw = new StreamWriter(directoryName + "/" + sw_all.ElapsedMilliseconds + ".csv");
 
                             sw.Write(sb.ToString());
 
