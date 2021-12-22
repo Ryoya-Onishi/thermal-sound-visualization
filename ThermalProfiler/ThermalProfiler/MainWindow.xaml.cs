@@ -153,9 +153,11 @@ namespace ThermalProfiler
         {
             AUTD autd = new AUTD();
             autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
-            autd.AddDevice(new Vector3d(0,AUTD.AUTDHeight,0), Vector3d.Zero);
-            autd.AddDevice(new Vector3d(222, 0, 0), Vector3d.Zero);
-            autd.AddDevice(new Vector3d(222, AUTD.AUTDHeight, 0), Vector3d.Zero);
+            autd.AddDevice(new Vector3d(0, 0, 0), Vector3d.Zero);
+            //autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
+            //autd.AddDevice(new Vector3d(0, 206.4, 0), Vector3d.Zero);
+            //autd.AddDevice(new Vector3d(250, 0, 0), Vector3d.Zero);
+            //autd.AddDevice(new Vector3d(250, 151.4, 0), Vector3d.Zero);
 
 
             //var ifname = GetIfname();
@@ -172,9 +174,9 @@ namespace ThermalProfiler
             foreach (var (firm, index) in autd.FirmwareInfoList().Select((firm, i) => (firm, i)))
                 Console.WriteLine($"AUTD {index}: {firm}");
 
-            const double x = 205;
-            const double y = 152;
-            const double z = 180;
+            const double x = 90;
+            const double y = 76;
+            const double z = 150;
 
             var focalPoint = new Vector3d(x, y, z);
 
@@ -198,8 +200,8 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 30000;
-            long intervalTime = 3000;
+            long radiatingTime = 300000;
+            long intervalTime = 30000;
 
             byte amplitude = 255;
 
@@ -211,11 +213,11 @@ namespace ThermalProfiler
 
             int frameNum = 0;
 
-            var directoryName = @"D:\onishi_Local2/Nature/exp/Reflect_Acryle/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            var directoryName = @"D:\onishi_Local2/Nature/exp_for_paper/standingWave/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
 
             int z_change = 170;
             float y_change = 151.4f;
-            
+
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
@@ -253,10 +255,12 @@ namespace ThermalProfiler
                         }
 
                         t0 = sw_autd.ElapsedMilliseconds;
-                        gain = Gain.FocalPoint(new Vector3d(x,y_change,z_change), amplitude); //AUTD照射
+                        //gain = Gain.FocalPoint(new Vector3d(x,y_change,z_change), amplitude); //AUTD照射位置を変える
+                        gain = Gain.FocalPoint(new Vector3d(x, y, z), amplitude); //AUTD照射
+
                         autd.Send(gain);
                         isNotAppendedGain = false;
-                        
+
                     }
                     else if (sw_autd.ElapsedMilliseconds > intervalTime + radiatingTime)
                     {
@@ -266,8 +270,8 @@ namespace ThermalProfiler
                         trial_times += 1;
                     }
 
-                    if (!isNotAppendedGain)
-                    {                        
+                    if (true)
+                    {
                         delta_time = sw_autd.ElapsedMilliseconds - t0;
 
                         var sb = new StringBuilder();
