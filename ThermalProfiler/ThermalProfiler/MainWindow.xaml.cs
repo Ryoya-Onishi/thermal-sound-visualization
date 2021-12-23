@@ -153,7 +153,7 @@ namespace ThermalProfiler
         {
             AUTD autd = new AUTD();
             autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
-            autd.AddDevice(new Vector3d(0, 0, 0), Vector3d.Zero);
+            //autd.AddDevice(new Vector3d(0, 0, 0), Vector3d.Zero);
             //autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
             //autd.AddDevice(new Vector3d(0, 206.4, 0), Vector3d.Zero);
             //autd.AddDevice(new Vector3d(250, 0, 0), Vector3d.Zero);
@@ -199,10 +199,10 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 300000;
+            long radiatingTime = 30000;
             long intervalTime = 30000;
 
-            byte amplitude = 255;
+            byte amplitude = 50;
 
             byte ampStep = 5;
 
@@ -212,7 +212,7 @@ namespace ThermalProfiler
 
             int frameNum = 0;
 
-            var directoryName = @"D:\onishi_Local2/Nature/exp_for_paper/standingWave/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            var directoryName = @"D:\onishi_Local2/Nature/exp_for_paper/SigleFocusRotateDuty50/degree0/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
 
             int z_change = 170;
             float y_change = 151.4f;
