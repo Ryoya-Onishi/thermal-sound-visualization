@@ -159,7 +159,6 @@ namespace ThermalProfiler
             //autd.AddDevice(new Vector3d(250, 0, 0), Vector3d.Zero);
             //autd.AddDevice(new Vector3d(250, 151.4, 0), Vector3d.Zero);
 
-
             //var ifname = GetIfname();
             var ifname = @"\Device\NPF_{70548BB5-E7B1-4538-91A5-41FA6A1500C2}";
 
