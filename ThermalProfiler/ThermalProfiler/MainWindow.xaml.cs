@@ -199,8 +199,8 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime =30000000;
-            long intervalTime = 30000;
+            long radiatingTime = 30000000;
+            long intervalTime = 3000;
 
             byte amplitude = 255;
 
@@ -212,7 +212,7 @@ namespace ThermalProfiler
 
             int frameNum = 0;
 
-            var directoryName = @"D:\onishi_Local2/Nature/exp_for_paper/standing" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            var directoryName = @"D:\onishi_Local2/Nature/exp_for_paper/Microphone_standing/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm" + "_measureTemp");
 
             int z_change = 170;
             float y_change = 151.4f;
