@@ -153,7 +153,7 @@ namespace ThermalProfiler
         {
             AUTD autd = new AUTD();
             autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
-            autd.AddDevice(new Vector3d(0, 0, 0), Vector3d.Zero);
+            autd.AddDevice(new Vector3d(0, 208, 0), Vector3d.Zero);
             //autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
             //autd.AddDevice(new Vector3d(0, 206.4, 0), Vector3d.Zero);
             //autd.AddDevice(new Vector3d(250, 0, 0), Vector3d.Zero);
@@ -174,7 +174,7 @@ namespace ThermalProfiler
                 Console.WriteLine($"AUTD {index}: {firm}");
 
             const double x = 90;
-            const double y = 76;
+            const double y = 170;
             const double z = 150;
 
             var focalPoint = new Vector3d(x, y, z);
@@ -199,8 +199,8 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 30000000;
-            long intervalTime = 3000;
+            long radiatingTime = 3000;
+            long intervalTime = 100;
 
             byte amplitude = 255;
 
@@ -212,7 +212,7 @@ namespace ThermalProfiler
 
             int frameNum = 0;
 
-            var directoryName = @"D:\onishi_Local2/Nature/exp_for_paper/Microphone_standing/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm" + "_measureTemp");
+            var directoryName = @"D:\onishi_Local2/reflectObj_changeDuty" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
 
             int z_change = 170;
             float y_change = 151.4f;
@@ -236,7 +236,7 @@ namespace ThermalProfiler
                         //y_change += 1;
                         //z_change += 1;
 
-                        //amplitude -= ampStep;
+                        amplitude -= ampStep;
                         trial_times = 0;
 
                     }
@@ -269,7 +269,7 @@ namespace ThermalProfiler
                         trial_times += 1;
                     }
 
-                    if (true)
+                    if (!isNotAppendedGain)
                     {
                         delta_time = sw_autd.ElapsedMilliseconds - t0;
 
@@ -289,7 +289,7 @@ namespace ThermalProfiler
                             sb.AppendLine();
                         }
 
-                        if (true)
+                        if (!isNotAppendedGain)
                         {
                             //if (!Directory.Exists(directoryName + "/duty" + amplitude)) Directory.CreateDirectory(directoryName + "/duty" + amplitude);
 
@@ -297,9 +297,9 @@ namespace ThermalProfiler
                             //using var sw = new StreamWriter(directoryName + "/" + "y" + y_change + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime + ".csv");
 
                             //using var sw = new StreamWriter(directoryName + "/" + delta_time + ".csv");
-                            //using var sw = new StreamWriter(directoryName + "/"  +"duty" + amplitude +"_" +delta_time + ".csv");
+                            using var sw = new StreamWriter(directoryName + "/"  +"duty" + amplitude +"_" +delta_time + ".csv");
 
-                            using var sw = new StreamWriter(directoryName + "/" + sw_all.ElapsedMilliseconds + ".csv");
+                            //using var sw = new StreamWriter(directoryName + "/" + sw_all.ElapsedMilliseconds + ".csv");
 
                             sw.Write(sb.ToString());
 
