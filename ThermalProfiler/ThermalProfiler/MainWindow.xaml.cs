@@ -152,7 +152,7 @@ namespace ThermalProfiler
         {
             AUTD autd = new AUTD();
             autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
-            autd.AddDevice(new Vector3d(0, 208, 0), Vector3d.Zero);
+            //autd.AddDevice(new Vector3d(0, 208, 0), Vector3d.Zero);
             //autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
             //autd.AddDevice(new Vector3d(0, 206.4, 0), Vector3d.Zero);
             //autd.AddDevice(new Vector3d(250, 0, 0), Vector3d.Zero);
@@ -172,9 +172,9 @@ namespace ThermalProfiler
             foreach (var (firm, index) in autd.FirmwareInfoList().Select((firm, i) => (firm, i)))
                 Console.WriteLine($"AUTD {index}: {firm}");
 
-            const double x = 96;
-            const double y = 173;
-            const double z = 155;
+            const double x = 87;
+            const double y = 75;
+            const double z = 150;
 
             var focalPoint = new Vector3d(x, y, z);
 
@@ -198,10 +198,10 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 500;
+            long radiatingTime = 10000;
             long intervalTime = 10000;
 
-            byte amplitude = 255;
+            byte amplitude = 50;
 
             byte ampStep = 5;
 
@@ -211,7 +211,7 @@ namespace ThermalProfiler
 
             int frameNum = 0;
 
-            var directoryName = @"D:\onishi_Local2/Relation_Force_and_Temp/acrylic" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            var directoryName = @"C:\Users\shinolab\OneDrive - The University of Tokyo\実験データ\PRApplied\" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
 
             int z_change = 170;
             float y_change = 151.4f;
@@ -226,11 +226,13 @@ namespace ThermalProfiler
                     images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
 
-                    if (trial_times >= 5)
+                    //計測の回数を指定
+                    if (trial_times >= 1)
                     {
                         amplitude -= ampStep;
                         if (amplitude <= 0) break;
                         trial_times = 0;
+                        break; //二回計測したらやめる
                     }
 
                     //照射間隔が十分に空いて、まだ照射が開始されていないときの、温度分布計測＋照射開始
@@ -260,11 +262,12 @@ namespace ThermalProfiler
                         autd.Stop();
                         sw_autd.Restart();
                         is_not_irradiated = true;
-                        //trial_times += 1;
+                        trial_times += 1;
                     }
 
                     //照射中のときは、温度分布をとり続ける
-                    if (!is_not_irradiated)
+                    //if(!is_not_irradiated)
+                    if (true)
                     {
                         delta_time = sw_autd.ElapsedMilliseconds - t0;
 
@@ -274,29 +277,40 @@ namespace ThermalProfiler
                             for (var j = 0; j < images.ThermalImage.GetLength(1); j++)
                             {
                                 if (j != 0) sb.Append(",");
-                                delta_T = ConvertToTemp(images.ThermalImage[i, j]) - array_T0[i, j];
+                                T = ConvertToTemp(images.ThermalImage[i, j]); //温度を取得
+                                //delta_T = ConvertToTemp(images.ThermalImage[i, j]) - array_T0[i, j]; //温度変化率を取得
 
-                                sb.Append((delta_T * 1000) / delta_time); //T'を求める
+                                sb.Append(T);
+                                //sb.Append((delta_T * 1000) / delta_time); //dT/dtを求める
                                 //sb.Append(delta_T); //dTを求める
                             }
                             sb.AppendLine();
                         }
 
-                        //oo秒経過後に一度だけ、dT/dtをファイルに書き出す。
-                        if (delta_time > 400 && !isGettedData)
+                        //A.データを保存（常に温度を保存し続ける）
+                        if (true)
                         {
-
                             using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude
-                            + "_trial" + trial_times.ToString() + "_t" + delta_time + ".csv");
-
+                                                    + "_trial" + trial_times.ToString() + "_t" + delta_time + ".csv");
                             sw.Write(sb.ToString());
-
-                            trial_times++;
-
-                            isGettedData = true;
-
-                                                        
                         }
+                     
+
+                        ////B.oo秒経過後に一度だけ、dT/dtをファイルに書き出す。
+                        //if (delta_time > 400 && !isGettedData)
+                        //{
+
+                        //    using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude
+                        //    + "_trial" + trial_times.ToString() + "_t" + delta_time + ".csv");
+
+                        //    sw.Write(sb.ToString());
+
+                        //    trial_times++;
+
+                        //    isGettedData = true;
+
+
+                        //}
                     }
 
                 }
