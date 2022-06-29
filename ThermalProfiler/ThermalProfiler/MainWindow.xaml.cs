@@ -172,9 +172,9 @@ namespace ThermalProfiler
             foreach (var (firm, index) in autd.FirmwareInfoList().Select((firm, i) => (firm, i)))
                 Console.WriteLine($"AUTD {index}: {firm}");
 
-            const double x = 90;
-            const double y = 170;
-            const double z = 150;
+            const double x = 96;
+            const double y = 173;
+            const double z = 155;
 
             var focalPoint = new Vector3d(x, y, z);
 
@@ -198,8 +198,8 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 3000;
-            long intervalTime = 100;
+            long radiatingTime = 500;
+            long intervalTime = 10000;
 
             byte amplitude = 255;
 
@@ -211,7 +211,7 @@ namespace ThermalProfiler
 
             int frameNum = 0;
 
-            var directoryName = @"D:\onishi_Local2/reflectObj_changeDuty" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            var directoryName = @"D:\onishi_Local2/Relation_Force_and_Temp/acrylic" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
 
             int z_change = 170;
             float y_change = 151.4f;
