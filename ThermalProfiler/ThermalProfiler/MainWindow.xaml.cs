@@ -139,15 +139,14 @@ namespace ThermalProfiler
             return etherCATAdapters[i].Name;
         }
 
-        private bool isNotAppendedGain = true;
+        private bool is_not_irradiated = true;
 
         private Stopwatch sw_all = new Stopwatch();
 
 
         private Stopwatch sw_autd = new Stopwatch();
         private Stopwatch sw_thermo = new Stopwatch();
-
-
+        private bool isGettedData = false;
 
         private async Task ImageGrabberMethod()
         {
@@ -227,21 +226,15 @@ namespace ThermalProfiler
                     images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
 
-                    if (trial_times >= 1)
+                    if (trial_times >= 5)
                     {
-                        if (amplitude >= 255)
-                        {
-                            //break;
-                        }
-                        //y_change += 1;
-                        //z_change += 1;
-
                         amplitude -= ampStep;
+                        if (amplitude <= 0) break;
                         trial_times = 0;
-
                     }
 
-                    if (sw_autd.ElapsedMilliseconds > intervalTime && isNotAppendedGain)
+                    //照射間隔が十分に空いて、まだ照射が開始されていないときの、温度分布計測＋照射開始
+                    if (sw_autd.ElapsedMilliseconds > intervalTime && is_not_irradiated) 
                     {
                         array_T0 = new double[images.ThermalImage.GetLength(0), images.ThermalImage.GetLength(1)]; ;
 
@@ -254,22 +247,24 @@ namespace ThermalProfiler
                         }
 
                         t0 = sw_autd.ElapsedMilliseconds;
-                        //gain = Gain.FocalPoint(new Vector3d(x,y_change,z_change), amplitude); //AUTD照射位置を変える
                         gain = Gain.FocalPoint(new Vector3d(x, y, z), amplitude); //AUTD照射
-
                         autd.Send(gain);
-                        isNotAppendedGain = false;
+                        is_not_irradiated = false;
+
+                        isGettedData = false;
 
                     }
+                    //照射間隔と照射時間経過したら、照射を止めて、ストップウォッチをリセット
                     else if (sw_autd.ElapsedMilliseconds > intervalTime + radiatingTime)
                     {
                         autd.Stop();
                         sw_autd.Restart();
-                        isNotAppendedGain = true;
-                        trial_times += 1;
+                        is_not_irradiated = true;
+                        //trial_times += 1;
                     }
 
-                    if (!isNotAppendedGain)
+                    //照射中のときは、温度分布をとり続ける
+                    if (!is_not_irradiated)
                     {
                         delta_time = sw_autd.ElapsedMilliseconds - t0;
 
@@ -281,31 +276,29 @@ namespace ThermalProfiler
                                 if (j != 0) sb.Append(",");
                                 delta_T = ConvertToTemp(images.ThermalImage[i, j]) - array_T0[i, j];
 
-
-                                //sb.Append((delta_T * 1000) / delta_time); //T'を求める
+                                sb.Append((delta_T * 1000) / delta_time); //T'を求める
                                 //sb.Append(delta_T); //dTを求める
-                                sb.Append(ConvertToTemp(images.ThermalImage[i, j]));
                             }
                             sb.AppendLine();
                         }
 
-                        if (!isNotAppendedGain)
+                        //oo秒経過後に一度だけ、dT/dtをファイルに書き出す。
+                        if (delta_time > 400 && !isGettedData)
                         {
-                            //if (!Directory.Exists(directoryName + "/duty" + amplitude)) Directory.CreateDirectory(directoryName + "/duty" + amplitude);
 
-                            //using var sw = new StreamWriter(directoryName + "/" + "z" + z_change  + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime +  ".csv");
-                            //using var sw = new StreamWriter(directoryName + "/" + "y" + y_change + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime + ".csv");
-
-                            //using var sw = new StreamWriter(directoryName + "/" + delta_time + ".csv");
-                            using var sw = new StreamWriter(directoryName + "/"  +"duty" + amplitude +"_" +delta_time + ".csv");
-
-                            //using var sw = new StreamWriter(directoryName + "/" + sw_all.ElapsedMilliseconds + ".csv");
+                            using var sw = new StreamWriter(directoryName + "/" + "duty" + amplitude
+                            + "_trial" + trial_times.ToString() + "_t" + delta_time + ".csv");
 
                             sw.Write(sb.ToString());
 
-                            //isNotAppendedGain = true; //一回目だけdT_dtを取得
+                            trial_times++;
+
+                            isGettedData = true;
+
+                                                        
                         }
                     }
+
                 }
                 catch (IOException ex)
                 {
