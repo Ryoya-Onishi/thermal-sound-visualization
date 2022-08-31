@@ -174,7 +174,7 @@ namespace ThermalProfiler
                 Console.WriteLine($"AUTD {index}: {firm}");
 
             const double x = 90;
-            const double y = 76;
+            const double y = 75;
             const double z = 150;
 
             var focalPoint = new Vector3d(x, y, z);
@@ -202,7 +202,7 @@ namespace ThermalProfiler
             long radiatingTime = 30000;
             long intervalTime = 30000;
 
-            byte amplitude = 50;
+            byte amplitude = 255;
 
             byte ampStep = 5;
 
@@ -212,14 +212,14 @@ namespace ThermalProfiler
 
             int frameNum = 0;
 
-            var directoryName = @"D:\onishi_Local2/Nature/exp_for_paper/SigleFocusRotateDuty50/degree0/" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            var directoryName = @"D:\onishi_Local2\Physical Review Applied\experiment\白アクリル完全反射20mm角_PRA\" + radiatingTime.ToString() + "amp=" + amplitude.ToString() + "_"+ DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
 
             int z_change = 170;
             float y_change = 151.4f;
 
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
-
+             
             while (_grabImage)
             {
                 try
@@ -238,6 +238,8 @@ namespace ThermalProfiler
 
                         //amplitude -= ampStep;
                         trial_times = 0;
+
+                        break;
 
                     }
 
@@ -260,6 +262,7 @@ namespace ThermalProfiler
                         autd.Send(gain);
                         isNotAppendedGain = false;
 
+                        
                     }
                     else if (sw_autd.ElapsedMilliseconds > intervalTime + radiatingTime)
                     {
