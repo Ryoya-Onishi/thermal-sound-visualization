@@ -124,6 +124,7 @@ namespace ThermalProfiler
 
         public int x0 = 160;
         public int y0 = 190;
+
         private static string GetIfname()
         {
             var adapters = AUTD.EnumerateAdapters();
