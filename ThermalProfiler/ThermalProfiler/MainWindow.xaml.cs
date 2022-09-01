@@ -214,6 +214,9 @@ namespace ThermalProfiler
             int frameNum = 0;
 
             var directoryName = @"D:\onishi_Local2\Physical Review Applied\experiment\白アクリル完全反射20mm角_PRA\" + radiatingTime.ToString() + "amp=" + amplitude.ToString() + "_"+ DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            string folderPass = @"D:\onishi_Local2\実験データ\指の追従\";
+            string filename = radiatingTime.ToString() + "amp=" + amplitude.ToString() + "_" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
+            string directoryName = folderPass + filename;
 
             int z_change = 170;
             float y_change = 151.4f;
