@@ -330,7 +330,7 @@ namespace ThermalProfiler
             autd.Dispose();
         }
 
-        private double GetMaxTemperatuer(ThermalPaletteImage images)
+        private double GetMaxTemperature(ThermalPaletteImage images)
         {
             var temp = 0d;
             var DataList_in_area = new List<double>();
