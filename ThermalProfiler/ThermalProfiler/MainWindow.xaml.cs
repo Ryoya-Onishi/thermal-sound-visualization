@@ -174,8 +174,8 @@ namespace ThermalProfiler
             foreach (var (firm, index) in autd.FirmwareInfoList().Select((firm, i) => (firm, i)))
                 Console.WriteLine($"AUTD {index}: {firm}");
 
-            const double x = 85;
-            const double y = 170;
+            const double x = 96;
+            const double y = 215;
             const double z = 180;
 
             var focalPoint = new Vector3d(x, y, z);
@@ -200,10 +200,10 @@ namespace ThermalProfiler
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 400;
+            long radiatingTime = 500;
             long intervalTime = 0;
 
-            byte amplitude = 255;
+            byte amplitude = 155;
 
             byte ampStep = 5;
 
@@ -216,12 +216,16 @@ namespace ThermalProfiler
             string folderPass = @"D:\onishi_Local2\実験データ\指の追従\";
             string filename = radiatingTime.ToString() + "amp=" + amplitude.ToString() + "_" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
             string directoryName = folderPass + filename;
-               
-            double changed_z = z;
+
+
+            float dz = 4f;
+            double changed_z = z - dz * 20;
             double changed_y = y;
 
-            float dz = 2f;
+            int serachNum = 40;
 
+            double z_low = changed_z;
+            double z_up;
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
@@ -232,14 +236,37 @@ namespace ThermalProfiler
                 {
                     images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
-                    
-                    if (trial_times >= 20) //ここでパラメタを変更してもよい。例えば、amplitude -= ampStep:など
-                    {
-                        Console.WriteLine(ideal_z);
-                        ideal_z = 0;
-                        changed_z = z;
-                        delta_T_max_in_all_dt = 0;
 
+                    if (trial_times >= serachNum) //このブロックでパラメタを変更してもよい。例えば、amplitude -= ampStep:など
+                    {
+                        //Console.WriteLine(ideal_z + ",dz = " + dz);
+
+                        dz = dz / 4;
+                        serachNum = serachNum / 4; 
+
+                        if (dz < 2);
+                        {
+                            intervalTime = 2000;
+                        }
+
+                        changed_z = ideal_z - dz * 5;
+                        z_low = changed_z;
+             
+                        delta_T_max_in_all_dt = 0;
+                 
+
+                        if (dz < 2)
+                        {
+                            //初期化
+                            dz = 4f;
+                            changed_z = z - dz*20;
+                            intervalTime = 0;
+                            serachNum = 40;
+
+                            Console.WriteLine("detected ideal z = " + ideal_z + " in 100 < z < 260" );
+                        }
+
+                        ideal_z = 0;
                         //if (amplitude >= 255) break;
 
                         trial_times = 0;
@@ -269,7 +296,11 @@ namespace ThermalProfiler
                     {
                         dt = sw_autd.ElapsedMilliseconds - intervalTime;
 
-                        //autd.Stop();
+                        if (intervalTime > 0)
+                        {
+                            autd.Stop();
+
+                        }
                         sw_autd.Restart();
                         isNotAppendedGain = true;
                         trial_times += 1;
@@ -289,16 +320,24 @@ namespace ThermalProfiler
                             }
                         }
 
+                        
+
                         if (delta_T_max_dt > delta_T_max_in_all_dt)
                         {
-                            delta_T_max_in_all_dt = delta_T_max_dt;
-                            ideal_z = changed_z;
+                            if (changed_z <= z_low + 1) ;
+                            else if (changed_z > 250) ;
+                            else
+                            {
+                                delta_T_max_in_all_dt = delta_T_max_dt;
+                                ideal_z = changed_z;
+                            }
+                            
                         }
 
                         //Console.WriteLine(
-                        //    "z = " + Math.Round(changed_z, 4, MidpointRounding.AwayFromZero).ToString()
-                        //    + ", dT = " + Math.Round(delta_T_max_dt, 4, MidpointRounding.AwayFromZero).ToString()
-                        //    + ",dt = " + dt.ToString());
+                            //"z = " + Math.Round(changed_z, 4, MidpointRounding.AwayFromZero).ToString()
+                            //+ ", dT = " + Math.Round(delta_T_max_dt, 4, MidpointRounding.AwayFromZero).ToString()
+                            //+ ",dt = " + dt.ToString());
 
                         changed_z = changed_z + dz;
                     }
@@ -333,9 +372,9 @@ namespace ThermalProfiler
                             //using var sw = new StreamWriter(directoryName + "/" + "y" + y_change + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime + ".csv");
                             //using var sw = new StreamWriter(directoryName + "/" + delta_time + ".csv");
                             //using var sw = new StreamWriter(directoryName + "/"  +"duty" + amplitude +"_" +delta_time + ".csv");
-                            using var sw = new StreamWriter(directoryName + "/" + sw_all.ElapsedMilliseconds + ".csv");
+                            //using var sw = new StreamWriter(directoryName + "/" + sw_all.ElapsedMilliseconds + ".csv");
 
-                            sw.Write(sb.ToString());
+                            //sw.Write(sb.ToString());
 
                             //isNotAppendedGain = true; //一回目だけdT_dtを取得
                         }
