@@ -11,8 +11,15 @@
  * 
  */
 
+
+
+
 using AUTD3Sharp;
+using AUTD3Sharp.Link;
 using AUTD3Sharp.Utils;
+using AUTD3Sharp.Gain;
+using AUTD3Sharp.Modulation;
+using AUTD3Sharp.STM;
 using libirimagerNet;
 using MaterialDesignThemes.Wpf;
 using Reactive.Bindings;
@@ -21,15 +28,18 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
+using System.Drawing;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Shapes;
 using ThermalProfiler.Domain;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
 
 namespace ThermalProfiler
 {
@@ -124,112 +134,135 @@ namespace ThermalProfiler
 
         public int x0 = 160;
         public int y0 = 190;
-
-        private static string GetIfname()
-        {
-            var adapters = AUTD.EnumerateAdapters();
-            var etherCATAdapters = adapters as EtherCATAdapter[] ?? adapters.ToArray();
-            foreach (var (adapter, index) in etherCATAdapters.Select((adapter, index) => (adapter, index)))
-            {
-                Console.WriteLine($"[{index}]: {adapter}");
-            }
-
-            Console.Write("Choose number: ");
-            int i;
-            while (!int.TryParse(Console.ReadLine(), out i)) { }
-            return etherCATAdapters[i].Name;
-        }
-
         private bool isNotAppendedGain = true;
-
         private Stopwatch sw_all = new Stopwatch();
         private Stopwatch sw_autd = new Stopwatch();
         private Stopwatch sw_thermo = new Stopwatch();
-        private double delta_T_max_dt;
-        private double ideal_z;
-        private long dt;
-        private double delta_T_max_in_all_dt = 0;
 
         private async Task ImageGrabberMethod()
         {
-            AUTD autd = new AUTD();
-            autd.AddDevice(Vector3d.Zero, Vector3d.Zero);
-            autd.AddDevice(new Vector3d(0, 151, 0), Vector3d.Zero);
-            autd.AddDevice(new Vector3d(-192, 0, 0), Vector3d.Zero);
-            autd.AddDevice(new Vector3d(-192, 151, 0), Vector3d.Zero);
-            autd.AddDevice(new Vector3d(192, 0, 0), Vector3d.Zero);
-            autd.AddDevice(new Vector3d(192, 151, 0), Vector3d.Zero);
+            var autd = new Controller();
+            autd.Geometry.AddDevice(Vector3d.zero, Vector3d.zero);
+            autd.Geometry.AddDevice(new Vector3d(0, 151, 0), Vector3d.zero);
+            autd.Geometry.AddDevice(new Vector3d(192, 0, 0), Vector3d.zero);
+            autd.Geometry.AddDevice(new Vector3d(192, 151, 0), Vector3d.zero);
+            autd.Geometry.AddDevice(new Vector3d(384, 0, 0), Vector3d.zero);
+            autd.Geometry.AddDevice(new Vector3d(384, 151, 0), Vector3d.zero);
 
-            //var ifname = GetIfname();
-            var ifname = @"\Device\NPF_{70548BB5-E7B1-4538-91A5-41FA6A1500C2}";
+            var onLost = new SOEM.OnLostCallbackDelegate((string msg) =>
+            {
+                Console.WriteLine($"Unrecoverable error occurred: {msg}");
+                Environment.Exit(-1);
+            });
 
-            var link = Link.SOEM(ifname, autd.NumDevices);
-
+            var link = new SOEM().HighPrecision(true).OnLost(onLost).FreeRun(true).Build();
             if (!autd.Open(link))
             {
-                Console.WriteLine(AUTD.LastError);
+                Console.WriteLine("Failed to open Controller.");
                 return;
             }
 
-            foreach (var (firm, index) in autd.FirmwareInfoList().Select((firm, i) => (firm, i)))
-                Console.WriteLine($"AUTD {index}: {firm}");
+            autd.AckCheckTimeoutMs = 20;
 
-            const double x = 96;
-            const double y = 215;
-            const double z = 180;
+            autd.Send(new Clear());
+            autd.Send(new Synchronize());
+
+            var firmList = autd.FirmwareInfoList().ToArray();
+            Console.WriteLine("==================================== Firmware information ======================================");
+            foreach (var firm in firmList)
+                Console.WriteLine($"{firm}");
+            Console.WriteLine("================================================================================================");
+
+            var config = new SilencerConfig();
+            autd.Send(config);
+
+            const double x_center = 272, y_center = 97, z_center = 224;
+            const double x_range = 0, y_range = 0, z_range = 0;
+            double x = x_center - x_range, y = y_center - y_range, z = z_center - z_range;
+            double x_step = 2, y_step = 0.5;
 
             var focalPoint = new Vector3d(x, y, z);
 
-            var mod = Modulation.Static();
+            //---------------　↓ 実験パラメータ  -----------
+            // 1. 名前
+            var name = "iwabuchi";
+            
+            // 2.1 ST -------------------
+            //var mod_name = "静圧";
+            //var mod = new Static(1);
 
-            var gain = Gain.FocalPoint(focalPoint);
+            //// 2.2 AM -----------
+            //var mod_name = "AM30";
+            //var mod = new Sine(30);
+            //var mod_name = "AM200";
+            //var mod = new Sine(200);
 
-            sw_all.Start();
-            sw_autd.Start();
-            sw_thermo.Start();
+            //// 2.3 STM ---------
+            var mod_name = "STM";
+            var mod = new Static(1);
+            var lengthList = new List<double> { 50 }; // mm
+            var velocityList = new List<double> { 10, 20, 30, 500 }; // mm/s
+
+            //// 2.3 LM ---------
+            //var mod_name = "LM";
+            //var mod = new Static(1);
+            //var perimeterList = new List<double> { 3,5,7 }; // cm
+            //var velocityList = new List<double> { 0.01, 0.1, 1,}; // m/s
+
+            // 3. 照射時間
+            long radiatingTime = 1000;
+            long intervalTime = 1000;   //シリコン用
+
+            // 5. 試行回数
+            int trial_times = 0;
+            int max_trial_times = 2;
+
+            // 4. 振幅
+            float ampStep = 0.5f;
+            float ampStart = 1f;
+            float ampFinish = 0.5f;
+
+            // 4. ファイルネーム
+            var directoryName = @"I:/iwabuchi_data/whc_thermo_data/指_振幅変化/実験結果/" + name + "/" + mod_name; // + DateTime.Now.ToString("yyyy_MM_dd_HH_mm")
+
+            //------------ ↑ 実験パラメータ-------------------------
+
+            var gain = new Focus(focalPoint);
+            float amplitude = ampStart;
+
+            var length_velocity = new List<(double, double)>();
+            int lengthVerocityID = 0;
+
+            foreach (var length in lengthList)
+                foreach (var velocity in velocityList)
+                    length_velocity.Add((length, velocity));
+
+            var perimeter_velocity = new List<(double, double)>();
+            int perimeterVerocityID = 0;
+
+            //foreach (var perimeter in perimeterList)
+            //    foreach (var velocity in velocityList)
+            //        perimeter_velocity.Add((perimeter, velocity));
+
+            sw_all.Start(); sw_autd.Start(); sw_thermo.Start(); 
 
             long t0 = 0;
-
-            long t = 0;
             long delta_time = 0;
-
-            double T0 = 0;
-
-            double T = 0;
             double delta_T = 0;
 
             ThermalPaletteImage images;
 
-            long radiatingTime = 500;
-            long intervalTime = 0;
-
-            byte amplitude = 155;
-
-            byte ampStep = 5;
-
             var array_T0 = new double[288, 382];
 
-            int trial_times = 0;
+            var evalCSVPath = directoryName + "/" + "evaluation.csv";
 
-            int frameNum = 0;
+            int seed = Environment.TickCount;
+            Random rnd = new Random(seed);
+            //Console.WriteLine("{0:F1}, ", rnd.Next(0,2));
 
-            string folderPass = @"D:\onishi_Local2\実験データ\指の追従\";
-            string filename = radiatingTime.ToString() + "amp=" + amplitude.ToString() + "_" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm");
-            string directoryName = folderPass + filename;
-
-
-            float dz = 4f;
-            double changed_z = z - dz * 20;
-            double changed_y = y;
-
-            int serachNum = 40;
-
-            double z_low = changed_z;
-            double z_up;
 
             if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
 
-             
             while (_grabImage)
             {
                 try
@@ -237,109 +270,69 @@ namespace ThermalProfiler
                     images = _irDirectInterface.ThermalPaletteImage;
                     PaletteImage.Value = images.PaletteImage;
 
-                    if (trial_times >= serachNum) //このブロックでパラメタを変更してもよい。例えば、amplitude -= ampStep:など
-                    {
-                        //Console.WriteLine(ideal_z + ",dz = " + dz);
-
-                        dz = dz / 4;
-                        serachNum = serachNum / 4; 
-
-                        if (dz < 2);
-                        {
-                            intervalTime = 2000;
-                        }
-
-                        changed_z = ideal_z - dz * 5;
-                        z_low = changed_z;
-             
-                        delta_T_max_in_all_dt = 0;
-                 
-
-                        if (dz < 2)
-                        {
-                            //初期化
-                            dz = 4f;
-                            changed_z = z - dz*20;
-                            intervalTime = 0;
-                            serachNum = 40;
-
-                            Console.WriteLine("detected ideal z = " + ideal_z + " in 100 < z < 260" );
-                        }
-
-                        ideal_z = 0;
-                        //if (amplitude >= 255) break;
-
-                        trial_times = 0;
-                        
-                    }
-
                     if (sw_autd.ElapsedMilliseconds > intervalTime && isNotAppendedGain)
                     {
                         array_T0 = new double[images.ThermalImage.GetLength(0), images.ThermalImage.GetLength(1)]; ;
 
                         for (var i = 0; i < images.ThermalImage.GetLength(0); i++)
-                        {
                             for (var j = 0; j < images.ThermalImage.GetLength(1); j++)
-                            {
                                 array_T0[i, j] = ConvertToTemp(images.ThermalImage[i, j]);
-                            }
-                        }
 
                         t0 = sw_autd.ElapsedMilliseconds;
-                        gain = Gain.FocalPoint(new Vector3d(x,changed_y,changed_z), amplitude); //AUTD照射位置を変える
-                        //gain = Gain.FocalPoint(new Vector3d(x, y, z), amplitude); //AUTD照射
 
-                        autd.Send(gain);
-                        isNotAppendedGain = false;                      
+                        if(mod_name == "静圧" || mod_name =="AM30" || mod_name == "AM200")
+                        {
+                            gain = new Focus(new Vector3d(x, y, z), amplitude);
+                            autd.Send(mod, gain);
+                        }
+                        else if(mod_name == "STM" || mod_name == "LM")
+                        {
+                            autd.Send(mod);
+                            var center = new Vector3d(x, y, z);
+                            Console.WriteLine(x+ "," + y + "" + z);
+                            var stm = new FocusSTM(autd.SoundSpeed);
+                            stm = Set_STM(stm, center, length_velocity[lengthVerocityID].Item1,
+                                length_velocity[lengthVerocityID].Item2, mod_name);
+                            autd.Send(stm);
+                            Console.WriteLine("C = " + length_velocity[lengthVerocityID].Item1 + ", v = " + length_velocity[lengthVerocityID].Item2);
+                        }
+
+                        isNotAppendedGain = false;
+
                     }
                     else if (sw_autd.ElapsedMilliseconds > intervalTime + radiatingTime)
                     {
-                        dt = sw_autd.ElapsedMilliseconds - intervalTime;
+                        autd.Send(new Stop());
 
-                        if (intervalTime > 0)
-                        {
-                            autd.Stop();
+                        autd.Send(new Clear());
+                        autd.Send(new Synchronize());
 
-                        }
                         sw_autd.Restart();
                         isNotAppendedGain = true;
                         trial_times += 1;
 
-                        delta_T_max_dt = 0;
+                        Console.WriteLine(amplitude + "," + trial_times);
 
-                        for (var i = 50; i < images.ThermalImage.GetLength(0)-50; i++)
+                        if (trial_times < max_trial_times)
+                            continue;
+                        else
                         {
-                            for (var j = 50; j < images.ThermalImage.GetLength(1)-50; j++)
-                            {
-                                delta_T = ConvertToTemp(images.ThermalImage[i, j]) - array_T0[i, j];
-
-                                if (1000*delta_T/dt > delta_T_max_dt)
-                                {
-                                    delta_T_max_dt = 1000*delta_T/dt;
-                                }                                
-                            }
-                        }
-
-                        
-
-                        if (delta_T_max_dt > delta_T_max_in_all_dt)
-                        {
-                            if (changed_z <= z_low + 1) ;
-                            else if (changed_z > 250) ;
+                            lengthVerocityID += 1;
+                            trial_times = 0;
+                            if (lengthVerocityID < length_velocity.Count && mod_name == "STM")
+                                continue;
                             else
                             {
-                                delta_T_max_in_all_dt = delta_T_max_dt;
-                                ideal_z = changed_z;
+                                amplitude -= ampStep;
+                                lengthVerocityID = 0;
+
+                                if (Math.Round(amplitude, 1) < ampFinish)
+                                {
+                                    Console.WriteLine("All done");
+                                    break;
+                                }
                             }
-                            
                         }
-
-                        //Console.WriteLine(
-                            //"z = " + Math.Round(changed_z, 4, MidpointRounding.AwayFromZero).ToString()
-                            //+ ", dT = " + Math.Round(delta_T_max_dt, 4, MidpointRounding.AwayFromZero).ToString()
-                            //+ ",dt = " + dt.ToString());
-
-                        changed_z = changed_z + dz;
                     }
 
                     if (true)
@@ -347,36 +340,35 @@ namespace ThermalProfiler
                         delta_time = sw_autd.ElapsedMilliseconds - t0;
 
                         var sb = new StringBuilder();
-
-                        delta_T_max_dt = 0;
-
                         for (var i = 0; i < images.ThermalImage.GetLength(0); i++)
                         {
                             for (var j = 0; j < images.ThermalImage.GetLength(1); j++)
                             {
                                 if (j != 0) sb.Append(",");
-                                delta_T = ConvertToTemp(images.ThermalImage[i, j]) - array_T0[i, j];
-
-                                //sb.Append((delta_T * 1000) / delta_time); //T'を求める
-                                //sb.Append(delta_T); //dTを求める
                                 sb.Append(ConvertToTemp(images.ThermalImage[i, j]));
-
-                                if(delta_T > delta_T_max_dt) delta_T_max_dt = delta_T;
                             }
                             sb.AppendLine();
                         }
 
                         if (true)
                         {
-                            //using var sw = new StreamWriter(directoryName + "/" + "z" + z_change  + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime +  ".csv");
-                            //using var sw = new StreamWriter(directoryName + "/" + "y" + y_change + "_trial" + trial_times.ToString() + "_t" + delta_time + "interval" + intervalTime + ".csv");
-                            //using var sw = new StreamWriter(directoryName + "/" + delta_time + ".csv");
-                            //using var sw = new StreamWriter(directoryName + "/"  +"duty" + amplitude +"_" +delta_time + ".csv");
-                            //using var sw = new StreamWriter(directoryName + "/" + sw_all.ElapsedMilliseconds + ".csv");
+                            var _directoryName = "";
 
-                            //sw.Write(sb.ToString());
+                            if (mod_name == "静圧" || mod_name == "AM30" || mod_name == "AM200")
+                            {
+                                _directoryName = "amp_" + Math.Round(amplitude, 2) + "/step_" + trial_times + "_x_" + x;
+                            }
+                            else if (mod_name == "STM")
+                            {
+                                _directoryName = "amp_" + Math.Round(amplitude, 1) + "/step_" + trial_times + "_x_" + x + "/length_velocity_"
+                                + length_velocity[lengthVerocityID].Item1 + "_" + length_velocity[lengthVerocityID].Item2;
+                            }
 
-                            //isNotAppendedGain = true; //一回目だけdT_dtを取得
+                            if (!Directory.Exists(directoryName + "/" + _directoryName)) Directory.CreateDirectory(directoryName + "/" + _directoryName);
+
+                            using var sw = new StreamWriter(directoryName + "/" + _directoryName + "/" + sw_all.ElapsedMilliseconds + "_" + (1 - Convert.ToInt32(isNotAppendedGain)) + ".csv");  //照射中か否か
+
+                            sw.Write(sb.ToString());
                         }
                     }
                 }
@@ -396,34 +388,32 @@ namespace ThermalProfiler
             autd.Dispose();
         }
 
-        private double GetMaxTemperature(ThermalPaletteImage images)
+        private FocusSTM Set_STM(FocusSTM stm, Vector3d center, double length, double velocity ,string mod_name)
         {
-            var temp = 0d;
-            var DataList_in_area = new List<double>();
-
-            int j_max = 0;
-            int i_max = 0;
-
-            for (int i = 0; i < 380; i++)
+            const int pointNum = 200;
+            for (var i = 0; i < pointNum; i++)
             {
-                for (int j = 0; j < 280; j++)
-                {
-                    if (temp < ConvertToTemp(images.ThermalImage[j, i]))
-                    {
-                        temp = ConvertToTemp(images.ThermalImage[j, i]);
-
-                        j_max = j;
-                        i_max = i;
-                    }
-                    DataList_in_area.Add(temp);
-                }
+                double d_i = i / (double)pointNum;
+                var p = length * new Vector3d(d_i, 0, 0);    
+                stm.Add(center + p);
             }
-
-            temp = ConvertToTemp(images.ThermalImage[j_max, i_max]);
-
-            Console.WriteLine(j_max + "," + i_max);
-
-            return temp;
+            stm.Frequency = velocity / length;
+            Console.WriteLine(stm);
+            return stm;
+        }
+        private FocusSTM Set_LM(FocusSTM stm, Vector3d center, double perimeter, double velocity, string mod_name)
+        {
+            const int pointNum = 200;
+            for (var i = 0; i < pointNum; i++)
+            {
+                double radius = 10 * perimeter / (2 * Math.PI); // cmなので、10をかけてmmに直す
+                var theta = 2.0 * Math.PI * i / pointNum;
+                var p = radius * new Vector3d(Math.Cos(theta), Math.Sin(theta), 0);
+                stm.Add(center + p);
+            }
+            stm.Frequency = 1000 * velocity / (perimeter * 10); // m/sなので1000かけてmm/sに、perimeterはcmなので10かけてmmに
+            
+            return stm;
         }
 
         public static double ConvertToTemp(ushort data)
